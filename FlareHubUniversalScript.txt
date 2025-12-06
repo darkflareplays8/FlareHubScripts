@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - SAB TAB LOCKED (DarealBloxfruiter ONLY)
+-- 🔥 FlareHub V2 - COMPLETE MULTI-GAME HUB
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -7,14 +7,16 @@ Rayfield:LoadConfiguration()
 local Window = Rayfield:CreateWindow({
    Name = "🔥 FlareHub V2",
    LoadingTitle = "FlareHub V2",
-   LoadingSubtitle = "Godmode • Fly • Noclip • Walkspeed • Brainrot",
+   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed • SAB • 99 Nights",
    ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FlareConfig" },
    Discord = { Enabled = false },
    KeySystem = false
 })
 
-local Tab = Window:CreateTab("Main", 4483362458)
-local BrainrotTab
+local MainTab = Window:CreateTab("🎮 Main", 4483362458)
+local SABTab
+local NightsTab
+
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
 task.wait(1)
@@ -25,16 +27,19 @@ local function isAuthorized()
 end
 
 -- GAME DETECTION
-local function isStealABrainrot()
+local function detectGame()
    local success, result = pcall(function()
       return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
    end)
    if success then
       local gameName = result:lower()
-      return gameName:find("steal") and gameName:find("brainrot")
+      if gameName:find("steal") and gameName:find("brainrot") then return "SAB" end
+      if gameName:find("night") and (gameName:find("forest") or gameName:find("99")) then return "99NIGHTS" end
    end
-   return false
+   return "UNIVERSAL"
 end
+
+local currentGame = detectGame()
 
 -- ULTRA SAFE WALKSPD
 local function safeSetWalkspeed(humanoid, speed)
@@ -67,213 +72,162 @@ local function toggleGodmode(Value)
    end
 end
 
--- Steal a Brainrot Tab - AUTHORIZED ONLY
-if isStealABrainrot() then
-   if isAuthorized() then
-      -- ✅ AUTHORIZED USER - FULL FEATURES
-      BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
+-- 🌲 99 NIGHTS TAB - GAME SPECIFIC
+if currentGame == "99NIGHTS" then
+   NightsTab = Window:CreateTab("🌲 99 Nights", 1398837429)
+   
+   local BringSection = NightsTab:CreateSection("📦 Bring Items")
+   
+   -- DYNAMIC ITEM SCANNER
+   local function scanWorkspaceItems()
+      local items = {}
+      local scannedNames = {}
       
-      BrainrotTab:CreateToggle({
-         Name = "🤖 Auto Collect (NO TP - SAFE)",
-         CurrentValue = false,
-         Flag = "AutoCollectToggle",
-         Callback = function(Value)
-            getgenv().AutoCollectEnabled = Value
-            if Value then
-               spawn(function()
-                  while getgenv().AutoCollectEnabled do
-                     pcall(function()
-                        for _, obj in pairs(workspace:GetDescendants()) do
-                           if obj:IsA("BasePart") and (
-                              obj.Name:lower():find("collect") or 
-                              obj.Name:lower():find("dropoff") or 
-                              obj.Name:lower():find("deposit") or
-                              obj.Name:lower():find("cash")
-                           ) then
-                              local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
-                              if distance < 40 then
-                                 local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
-                                 if clickDetector then
-                                    fireclickdetector(clickDetector)
-                                    Rayfield:Notify({
-                                       Title = "Auto Collect",
-                                       Content = "Collected from " .. obj.Name,
-                                       Duration = 2
-                                    })
-                                    wait(4)
-                                    break
-                                 end
-                              end
-                           end
-                        end
-                     end)
-                     wait(5)
-                  end
-               end)
-            end
-         end,
-      })
-      
-      BrainrotTab:CreateToggle({
-         Name = "🔒 Auto Lock Base",
-         CurrentValue = false,
-         Flag = "AutoLockToggle",
-         Callback = function(Value)
-            getgenv().AutoLockEnabled = Value
-            if Value then
-               spawn(function()
-                  while getgenv().AutoLockEnabled do
-                     for _, obj in pairs(workspace:GetDescendants()) do
-                        if obj.Name:lower():find("lock") and obj:FindFirstChildOfClass("ClickDetector") then
-                           local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
-                           if distance < 50 then
-                              fireclickdetector(obj:FindFirstChildOfClass("ClickDetector"))
-                              wait(10)
-                              break
-                           end
-                        end
-                     end
-                     wait(15)
-                  end
-               end)
-            end
-         end,
-      })
-      
-      Rayfield:Notify({
-         Title = "✅ AUTHORIZED",
-         Content = "DarealBloxfruiter - Full SAB features unlocked!",
-         Duration = 5
-      })
-      
-   else
-      -- ❌ NOT AUTHORIZED - DEVELOPMENT MODE
-      BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
-      
-      BrainrotTab:CreateLabel("🔒 SAB Tab - In Development")
-      BrainrotTab:CreateLabel("👤 Authorized: DarealBloxfruiter ONLY")
-      BrainrotTab:CreateLabel("⏳ Full features coming soon...")
-      
-      Rayfield:Notify({
-         Title = "🔒 SAB Tab Locked",
-         Content = "Only DarealBloxfruiter can access full features",
-         Duration = 6
-      })
-   end
-end
-
--- MAIN TAB (Universal for everyone)
-Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() print("FlareHub SAB SAFE!") end })
-
-Tab:CreateToggle({
-   Name = "💖 True Godmode",
-   CurrentValue = false,
-   Flag = "GodmodeToggle",
-   Callback = function(Value) toggleGodmode(Value) end,
-})
-
-Tab:CreateToggle({
-   Name = "✨ Noclip",
-   CurrentValue = false,
-   Flag = "NoclipToggle",
-   Callback = function(Value)
-      getgenv().NoclipEnabled = Value
-      if Value then
-         getgenv().NoclipConnection = RunService.Stepped:Connect(function()
-            if player.Character then
-               for _, part in pairs(player.Character:GetDescendants()) do
-                  if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                     part.CanCollide = false
-                  end
+      for _, obj in pairs(workspace:GetDescendants()) do
+         if obj:IsA("BasePart") and obj.Name ~= "" and obj.Parent ~= player.Character then
+            local name = obj.Name:lower()
+            -- Filter for common 99 Nights items
+            if name:find("wood") or name:find("food") or name:find("apple") or name:find("berry") or 
+               name:find("diamond") or name:find("seed") or name:find("trim") or 
+               name:find("metal") or name:find("scrap") or name:find("steak") or
+               name:find("fish") or name:find("cake") or name:find("pumpkin") then
+               if not scannedNames[name] then
+                  scannedNames[name] = true
+                  table.insert(items, obj.Name)
                end
             end
-         end)
-      else 
-         if getgenv().NoclipConnection then getgenv().NoclipConnection:Disconnect() end
+         end
       end
-   end,
-})
-
-Tab:CreateSlider({
-   Name = "Fly Speed",
-   Range = {50, 150},
-   Increment = 10,
-   CurrentValue = 100,
-   Flag = "FlySpeedSlider",
-   Callback = function(Value) getgenv().FlySpeed = Value end,
-})
-
-Tab:CreateToggle({
-   Name = "🕊️ Fly",
-   CurrentValue = false,
-   Flag = "FlyToggle",
-   Callback = function(Value)
-      getgenv().FlyEnabled = Value
-      local character = player.Character or player.CharacterAdded:Wait()
-      local humanoid = character:WaitForChild("Humanoid")
-      local rootPart = character:WaitForChild("HumanoidRootPart")
       
-      if Value then
-         humanoid.PlatformStand = true
-         local bodyVelocity = Instance.new("BodyVelocity")
-         bodyVelocity.MaxForce = Vector3.new(2000, 2000, 2000)
-         bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-         bodyVelocity.Parent = rootPart
-         
-         local bodyGyro = Instance.new("BodyGyro")
-         bodyGyro.MaxTorque = Vector3.new(2000, 2000, 2000)
-         bodyGyro.P = 2000
-         bodyGyro.D = 300
-         bodyGyro.CFrame = rootPart.CFrame
-         bodyGyro.Parent = rootPart
-         
-         getgenv().FlyBodyVelocity = bodyVelocity
-         getgenv().FlyBodyGyro = bodyGyro
-         
-         getgenv().FlyConnection = RunService.Heartbeat:Connect(function()
-            local camera = workspace.CurrentCamera
-            local moveDir = humanoid.MoveDirection
-            local speed = getgenv().FlySpeed or 100
-            
-            if moveDir.Magnitude > 0.05 then
-               local camForward = Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z).Unit
-               local camRight = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z).Unit
-               local velocity = (camForward * -moveDir.Z + camRight * moveDir.X + Vector3.new(0, moveDir.Y, 0)).Unit * speed
-               bodyVelocity.Velocity = velocity
-            else
-               bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            end
-            
-            bodyGyro.CFrame = camera.CFrame
-         end)
-      else
-         humanoid.PlatformStand = false
-         if getgenv().FlyBodyVelocity then getgenv().FlyBodyVelocity:Destroy() end
-         if getgenv().FlyBodyGyro then getgenv().FlyBodyGyro:Destroy() end
-         if getgenv().FlyConnection then getgenv().FlyConnection:Disconnect() end
-      end
-   end,
-})
-
-Tab:CreateSlider({
-   Name = "Walkspeed (Safe)",
-   Range = {16, 24},
-   Increment = 1,
-   CurrentValue = 16,
-   Flag = "WalkspeedSlider",
-   Callback = function(Value)
-      local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-      if humanoid then safeSetWalkspeed(humanoid, Value) end
-   end,
-})
-
--- AUTH NOTIFICATION
-if isStealABrainrot() then
-   if isAuthorized() then
-      Rayfield:Notify({
-         Title = "🧠 SAB ULTRA SAFE - AUTHORIZED",
-         Content = "DarealBloxfruiter - Full features unlocked!",
-         Duration = 6
-      })
+      table.sort(items)
+      return items
    end
+   
+   local Dropdown
+   local function updateItemDropdown()
+      local items = scanWorkspaceItems()
+      if #items > 0 then
+         Dropdown:Refresh(items, true)
+         Dropdown:Set(items[1])
+      end
+   end
+   
+   NightsTab:CreateButton({
+      Name = "🔍 Scan Items",
+      Callback = function()
+         updateItemDropdown()
+         Rayfield:Notify({Title = "Scan Complete", Content = "Found " .. #scanWorkspaceItems() .. " item types!", Duration = 3})
+      end
+   })
+   
+   Dropdown = NightsTab:CreateDropdown({
+      Name = "🎯 Bring Item",
+      Options = {"Scanning..."},
+      CurrentOption = "None",
+      Flag = "BringItem99Nights",
+      Callback = function(Option)
+         if Option == "None" then return end
+         
+         local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if not rootPart then return end
+         
+         local brought = 0
+         for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Name == Option and obj.Parent ~= player.Character then
+               pcall(function()
+                  obj.CFrame = rootPart.CFrame * CFrame.new(math.random(-3,3), math.random(1,3), -5)
+                  brought = brought + 1
+               end)
+            end
+         end
+         
+         Rayfield:Notify({
+            Title = "Bring Complete", 
+            Content = "Brought " .. brought .. " " .. Option .. "!", 
+            Duration = 3
+         })
+      end
+   })
+   
+   -- Quick bring buttons (backup)
+   NightsTab:CreateButton({
+      Name = "📦 Bring All Wood",
+      Callback = function()
+         local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if not rootPart then return end
+         
+         local count = 0
+         for _, item in pairs(workspace:GetDescendants()) do
+            if item:IsA("BasePart") and item.Name:lower():find("wood") then
+               item.CFrame = rootPart.CFrame * CFrame.new(0, 0, -3)
+               count = count + 1
+            end
+         end
+         Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " wood!", Duration = 3})
+      end,
+   })
+   
+   NightsTab:CreateButton({
+      Name = "🍎 Bring All Food",
+      Callback = function()
+         local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if not rootPart then return end
+         
+         local count = 0
+         for _, item in pairs(workspace:GetDescendants()) do
+            local name = item.Name:lower()
+            if item:IsA("BasePart") and (name:find("food") or name:find("apple") or name:find("berry") or 
+               name:find("cake") or name:find("steak") or name:find("fish")) then
+               item.CFrame = rootPart.CFrame * CFrame.new(2, 0, -3)
+               count = count + 1
+            end
+         end
+         Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " food!", Duration = 3})
+      end,
+   })
+   
+   NightsTab:CreateButton({
+      Name = "💎 Bring All Diamonds",
+      Callback = function()
+         local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if not rootPart then return end
+         
+         local count = 0
+         for _, item in pairs(workspace:GetDescendants()) do
+            if item:IsA("BasePart") and item.Name:lower():find("diamond") then
+               item.CFrame = rootPart.CFrame * CFrame.new(-2, 0, -3)
+               count = count + 1
+            end
+         end
+         Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " diamonds!", Duration = 3})
+      end,
+   })
+
+   local TeleportSection = NightsTab:CreateSection("🚀 Teleport")
+   NightsTab:CreateButton({
+      Name = "🏕️ TP to Base",
+      Callback = function()
+         for _, base in pairs(workspace:GetDescendants()) do
+            if base.Name:lower():find("base") and base:IsA("BasePart") then
+               player.Character.HumanoidRootPart.CFrame = base.CFrame + Vector3.new(0, 5, 0)
+               break
+            end
+         end
+      end,
+   })
+   
+   NightsTab:CreateButton({
+      Name = "🌳 TP to Trees",
+      Callback = function()
+         for _, tree in pairs(workspace:GetDescendants()) do
+            if tree.Name:lower():find("tree") and tree:IsA("BasePart") then
+               player.Character.HumanoidRootPart.CFrame = tree.CFrame + Vector3.new(0, 5, 0)
+               break
+            end
+         end
+         Rayfield:Notify({Title = "Teleport", Content = "Teleported to trees!", Duration = 2})
+      end,
+   })
 end
+
+print("🔥 FlareHub V2 loaded successfully!")
