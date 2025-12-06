@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - COMPLETE MULTI-GAME HUB
+-- 🔥 FlareHub V2 - INSPIRED BY RAYGULL 99 NIGHTS SCRIPT
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -7,74 +7,73 @@ Rayfield:LoadConfiguration()
 local Window = Rayfield:CreateWindow({
    Name = "🔥 FlareHub V2",
    LoadingTitle = "FlareHub V2",
-   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed • SAB • 99 Nights",
+   LoadingSubtitle = "99 Nights • ESP • Aimbot • Auto Farm • Teleport",
    ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FlareConfig" },
    Discord = { Enabled = false },
    KeySystem = false
 })
 
 local MainTab = Window:CreateTab("🎮 Main", 4483362458)
-local SABTab
-local NightsTab
+local NightsTab = Window:CreateTab("🌲 99 Nights", 1398837429)
 
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local camera = workspace.CurrentCamera
 task.wait(1)
 
--- AUTHORIZED USER CHECK
-local function isAuthorized()
-   return player.Name == "DarealBloxfruiter"
+-- **RAYGULL'S ACTUAL 99 NIGHTS ITEMS** - FROM WORKING SCRIPT [web:13]
+local teleportTargets = {
+    "Alien", "Alien Chest", "Alien Shelf", "Alpha Wolf", "Alpha Wolf Pelt", "Anvil Base", "Apple", "Bandage", 
+    "Bear", "Berry", "Bolt", "Broken Fan", "Broken Microwave", "Bunny", "Bunny Foot", "Cake", "Carrot", 
+    "Chair Set", "Chest", "Chilli", "Coal", "Coin Stack", "Crossbow Cultist", "Cultist", "Cultist Gem", 
+    "Deer", "Fuel Canister", "Giant Sack", "Good Axe", "Iron Body", "Item Chest", "Item Chest2", 
+    "Item Chest3", "Item Chest4", "Item Chest6", "Laser Fence Blueprint", "Laser Sword", "Leather Body", 
+    "Log", "Lost Child", "Lost Child2", "Lost Child3", "Lost Child4", "Medkit", "Meat? Sandwich", 
+    "Morsel", "Old Car Engine", "Old Flashlight", "Old Radio", "Oil Barrel", "Raygun", "Revolver", 
+    "Revolver Ammo", "Rifle", "Rifle Ammo", "Riot Shield", "Sapling", "Seed Box", "Sheet Metal", 
+    "Spear", "Steak", "Stronghold Diamond Chest", "Tyre", "UFO Component", "UFO Junk", 
+    "Washing Machine", "Wolf", "Wolf Corpse", "Wolf Pelt"
+}
+
+-- **STRICT PICKABLE FILTER** - ONLY RAYGULL'S LIST + PHYSICAL CHECK
+local function isPickableItem(obj)
+    if not obj:IsA("BasePart") then return false end
+    if obj.Size.Magnitude < 0.3 or obj.Size.Magnitude > 25 then return false end
+    if obj.Parent == player.Character then return false end
+    if not obj.Parent then return false end
+    
+    -- **MUST MATCH RAYGULL'S EXACT LIST**
+    for _, targetName in pairs(teleportTargets) do
+        if obj.Name == targetName or obj.Name:lower():find(targetName:lower()) then
+            -- BLOCK JUNK EVEN FROM LIST
+            local junkWords = {"particle", "effect", "light", "fire", "smoke", "glow", "scrapper"}
+            for _, junk in pairs(junkWords) do
+                if obj.Name:lower():find(junk) then return false end
+            end
+            return true
+        end
+    end
+    return false
 end
 
--- GAME DETECTION
-local function detectGame()
-   local success, result = pcall(function()
-      return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
-   end)
-   if success then
-      local gameName = result:lower()
-      if gameName:find("steal") and gameName:find("brainrot") then return "SAB" end
-      if gameName:find("night") and (gameName:find("forest") or gameName:find("99")) then return "99NIGHTS" end
-   end
-   return "UNIVERSAL"
+local function scanPickableItems()
+    local foundItems = {}
+    local seen = {}
+    
+    for _, obj in pairs(workspace:GetChildren()) do
+        if isPickableItem(obj) and not seen[obj.Name] then
+            seen[obj.Name] = true
+            table.insert(foundItems, obj.Name)
+        end
+    end
+    
+    table.sort(foundItems)
+    return foundItems
 end
 
-local currentGame = detectGame()
-
--- ULTRA SAFE WALKSPD
-local function safeSetWalkspeed(humanoid, speed)
-   local targetSpeed = math.clamp(speed, 16, 24)
-   spawn(function()
-      while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.1 do
-         local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.03
-         newSpeed = newSpeed + math.random(-1, 1) * 0.03
-         humanoid.WalkSpeed = math.clamp(newSpeed, 16, 24)
-         wait(0.4)
-      end
-   end)
-end
-
--- TRUE GODMODE
-local godmodeConnection
-local function toggleGodmode(Value)
-   if not player.Character then return end
-   local humanoid = player.Character:FindFirstChild("Humanoid")
-   if not humanoid then return end
-   
-   if Value then
-      godmodeConnection = humanoid.HealthChanged:Connect(function(health)
-         if health < humanoid.MaxHealth then
-            humanoid.Health = humanoid.MaxHealth
-         end
-      end)
-   else
-      if godmodeConnection then godmodeConnection:Disconnect() end
-   end
-end
-
--- 🎮 MAIN TAB CONTENT
+-- MAIN TAB - UNIVERSAL FEATURES
 local MovementSection = MainTab:CreateSection("🏃 Movement")
-
 MainTab:CreateToggle({
    Name = "Noclip",
    CurrentValue = false,
@@ -88,205 +87,165 @@ MainTab:CreateToggle({
    end
 })
 
-MainTab:CreateSlider({
-   Name = "Walkspeed",
-   Range = {16, 50},
-   Increment = 1,
-   Suffix = "Speed",
-   CurrentValue = 16,
-   Flag = "WalkspeedMain",
-   Callback = function(Value)
-      local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-      if humanoid then safeSetWalkspeed(humanoid, Value) end
-   end
-})
-
 MainTab:CreateToggle({
-   Name = "Godmode",
+   Name = "Fly (Q Toggle)",
    CurrentValue = false,
-   Flag = "GodmodeMain",
-   Callback = toggleGodmode
+   Flag = "FlyMain",
+   Callback = function(Value)
+      -- RAYGULL FLY LOGIC
+      local flying, flyConnection = false, nil
+      local speed = 60
+      local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+      
+      if Value then
+         local bodyGyro = Instance.new("BodyGyro", hrp)
+         local bodyVelocity = Instance.new("BodyVelocity", hrp)
+         bodyGyro.P = 9e4
+         bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+         bodyGyro.CFrame = hrp.CFrame
+         bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+         
+         flyConnection = RunService.RenderStepped:Connect(function()
+            local moveVec = Vector3.zero
+            local camCF = camera.CFrame
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec += camCF.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec -= camCF.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec -= camCF.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec += camCF.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec += camCF.UpVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveVec -= camCF.UpVector end
+            bodyVelocity.Velocity = moveVec.Magnitude > 0 and moveVec.Unit * speed or Vector3.zero
+            bodyGyro.CFrame = camCF
+         end)
+      end
+   end
 })
 
--- 🌲 99 NIGHTS TAB - GAME SPECIFIC
+-- 99 NIGHTS TAB - RAYGULL FEATURES
 if currentGame == "99NIGHTS" then
-   NightsTab = Window:CreateTab("🌲 99 Nights", 1398837429)
-   
-   local BringSection = NightsTab:CreateSection("📦 Bring Items")
-   
-   -- **COMPLETE 99 NIGHTS ITEM LIST** - EVERY SINGLE ITEM FROM ALL SOURCES [web:1][web:25][web:27][web:28]
-   local all99Items = {
-      -- 🌽 FOOD (35+ items)
-      "Apple", "BBQ Ribs", "Berry", "Cake", "Candy Apple", "Candy Corn", "Carrot", "Carrot Cake", 
-      "Char", "Chili", "Clownfish", "Corn", "Cotton Candy", "Eel", "Hearty Stew", "Jar o' Jelly",
-      "Jellyfish", "Lava Eel", "Lionfish", "Mackerel", "Meat? Sandwich", "Morsel", "Pumpkin",
-      "Pumpkin Pie", "Pumpkin Soup", "Ribs", "Salmon", "Seafood Chowder", "Seasoning", "Shark",
-      "Steak", "Steak Dinner", "Stew", "Swordfish", "Cornucopia",
-      
-      -- 🌱 SEEDS
-      "Berry Seeds", "Cavevine Seeds", "Chili Seeds", "Dripleaf Seeds", "Firefly Seeds",
-      "Flower Seeds", "Mandrake Seeds", "Moonflower Seeds", "Stareweed Seeds",
-      
-      -- 🛠️ MATERIALS & SCRAP (COMPLETE LIST)
-      "Wood", "Wood Log", "Scrap", "Sheet Metal", "Tyre", "Tire", "UFO Component", 
-      "UFO Scrap", "UFO Junk", "Washing Machine", "Broken Fan", "Broken Microwave",
-      "Old Radio", "Bolt", "CornerWedge", "Gold Wedge",
-      
-      -- 🩹 HEALING
-      "Bandage", "Medkit", "First Aid",
-      
-      -- 🔫 **GUNS & WEAPONS** 
-      "Gun", "Pistol", "Rifle", "Shotgun", "Ray Gun", "Chainsaw", "Bear Trap", "Bolt",
-      
-      -- 💎 GEMS & RESOURCES
-      "Coal", "Diamond", "Gem", "Crystal", "Cultist Gem", "Forest Gem", "Gold Shard", 
-      "Meteor Shard",
-      
-      -- 🔑 KEYS
-      "Blue Key", "Frog Key", "Grey Key", "Red Key", "Yellow Key"
-   }
-   
-   -- SMART FILTER - Matches workspace items against COMPLETE list
-   local function isValidPickup(obj)
-      if not obj:IsA("BasePart") or obj.Size.Magnitude < 0.2 then return false end
-      if obj.Parent == player.Character or not obj.Parent then return false end
-      
-      local name = obj.Name:lower()
-      local junkWords = {"particle", "effect", "light", "fire", "smoke", "glow", "scrapper", "debris", "chunk"}
-      
-      -- Block junk first
-      for _, junk in pairs(junkWords) do
-         if name:find(junk) then return false end
-      end
-      
-      -- Match against ALL 99 items + guns
-      for _, itemName in pairs(all99Items) do
-         if name:find(itemName:lower()) or itemName:lower():find(name) then
-            return true
-         end
-      end
-      return false
-   end
-   
-   local function scanRealItems()
-      local foundItems = {}
-      local seenNames = {}
-      
-      for _, obj in pairs(workspace:GetDescendants()) do
-         if isValidPickup(obj) and not seenNames[obj.Name] then
-            seenNames[obj.Name] = true
-            table.insert(foundItems, obj.Name)
-         end
-      end
-      
-      table.sort(foundItems)
-      return foundItems
-   end
+   local BringSection = NightsTab:CreateSection("📦 Bring REAL Items")
    
    local Dropdown
-   local function updateItemList()
-      local realItems = scanRealItems()
-      if #realItems > 0 then
-         Dropdown:Refresh(realItems, true)
-         Dropdown:Set(realItems[1])
-         Rayfield:Notify({Title = "🔍 SCAN COMPLETE", Content = #realItems .. " REAL 99 NIGHTS ITEMS FOUND!", Duration = 4})
+   local function updateDropdown()
+      local items = scanPickableItems()
+      if #items > 0 then
+         Dropdown:Refresh(items, true)
+         Dropdown:Set(items[1])
+         Rayfield:Notify({Title = "✅ REAL ITEMS", Content = #items .. " PICKABLE (Carrot=Carrot)", Duration = 3})
       else
-         Dropdown:Refresh({"No pickup items"}, true)
+         Dropdown:Refresh({"No items"}, true)
       end
    end
    
    NightsTab:CreateButton({
-      Name = "🔍 SCAN ALL 99 NIGHTS ITEMS",
-      Callback = function()
-         updateItemList()
-      end
+      Name = "🔍 Scan Pickable Items",
+      Callback = updateDropdown
    })
    
    Dropdown = NightsTab:CreateDropdown({
-      Name = "🎯 BRING ITEM",
-      Options = {"Scan first!"},
-      CurrentOption = {"Scan first!"},
+      Name = "🎯 Bring Item",
+      Options = {"Scan first"},
+      CurrentOption = {"Scan first"},
       Flag = "Bring99Nights",
       Callback = function(Option)
          local selected = Option[1]
-         if selected == "Scan first!" or selected == "No pickup items" then return end
+         if selected == "Scan first" or selected == "No items" then return end
          
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if not root then return end
          
          local count = 0
-         for _, obj in pairs(workspace:GetDescendants()) do
-            if isValidPickup(obj) and obj.Name == selected then
-               pcall(function()
-                  obj.CFrame = root.CFrame * CFrame.new(math.random(-5,5), math.random(2,5), -7)
-                  count = count + 1
-               end)
+         for _, obj in pairs(workspace:GetChildren()) do
+            if isPickableItem(obj) and obj.Name == selected then
+               obj.CFrame = root.CFrame * CFrame.new(math.random(-3,3), 2, -5)
+               count = count + 1
             end
          end
-         
-         Rayfield:Notify({
-            Title = "✅ BRING COMPLETE",
-            Content = "Brought " .. count .. " " .. selected .. "!",
-            Duration = 4
-         })
+         Rayfield:Notify({Title = "✅ BROUGHT", Content = count .. " " .. selected, Duration = 3})
       end
    })
    
-   -- QUICK GUN/MATERIAL BUTTONS
+   -- RAYGULL'S QUICK BUTTONS
    NightsTab:CreateButton({
-      Name = "🔫 Bring All Guns/Weapons",
+      Name = "🍎 Bring Food (Carrot/Apple/Morsel)",
       Callback = function()
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if root then
             local count = 0
-            local weapons = {"gun", "pistol", "rifle", "shotgun", "ray gun", "chainsaw"}
-            for _, item in pairs(workspace:GetDescendants()) do
-               if isValidPickup(item) then
-                  local name = item.Name:lower()
-                  for _, weapon in pairs(weapons) do
-                     if name:find(weapon) then
-                        item.CFrame = root.CFrame * CFrame.new(math.random(-3,3), 3, -4)
+            local foods = {"Carrot", "Apple", "Berry", "Morsel", "Steak"}
+            for _, obj in pairs(workspace:GetChildren()) do
+               if isPickableItem(obj) then
+                  for _, food in pairs(foods) do
+                     if obj.Name:find(food) then
+                        obj.CFrame = root.CFrame * CFrame.new(2, 2, -4)
                         count = count + 1
                         break
                      end
                   end
                end
             end
-            Rayfield:Notify({Title = "🔫 GUNS", Content = count .. " weapons brought!", Duration = 3})
+            Rayfield:Notify({Title = "🍎 FOOD", Content = count .. " food!", Duration = 2})
          end
       end
    })
    
    NightsTab:CreateButton({
-      Name = "🌲 Bring All Wood",
+      Name = "🌲 Bring Logs/Wood",
       Callback = function()
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if root then
             local count = 0
-            for _, item in pairs(workspace:GetDescendants()) do
-               if isValidPickup(item) and item.Name:lower():find("wood") then
-                  item.CFrame = root.CFrame * CFrame.new(0, 0, -3)
+            for _, obj in pairs(workspace:GetChildren()) do
+               if isPickableItem(obj) and obj.Name:find("Log") then
+                  obj.CFrame = root.CFrame * CFrame.new(0, 2, -4)
                   count = count + 1
                end
             end
-            Rayfield:Notify({Title = "🌲 WOOD", Content = count .. " wood brought!", Duration = 3})
+            Rayfield:Notify({Title = "🌲 LOGS", Content = count .. " logs!", Duration = 2})
          end
-      end,
+      end
    })
-
-   local TeleportSection = NightsTab:CreateSection("🚀 Teleport")
+   
+   -- RAYGULL TELEPORTS SECTION
+   local TeleportSection = NightsTab:CreateSection("🧲 Teleport")
    NightsTab:CreateButton({
-      Name = "🏕️ TP to Base",
+      Name = "🏕️ Campfire",
       Callback = function()
-         for _, base in pairs(workspace:GetDescendants()) do
-            if base.Name:lower():find("base") and base:IsA("BasePart") then
-               player.Character.HumanoidRootPart.CFrame = base.CFrame + Vector3.new(0, 5, 0)
-               break
+         player.Character:PivotTo(CFrame.new(0, 10, 0))
+      end
+   })
+   
+   NightsTab:CreateButton({
+      Name = "⚙️ Grinder",
+      Callback = function()
+         player.Character:PivotTo(CFrame.new(16.1,4,-4.6))
+      end
+   })
+   
+   -- DYNAMIC TELEPORT FROM RAYGULL LIST
+   NightsTab:CreateDropdown({
+      Name = "Teleport to Item",
+      Options = teleportTargets,
+      CurrentOption = {"Apple"},
+      Flag = "Teleport99",
+      Callback = function(Option)
+         local itemName = Option[1]
+         local closest, shortest = nil, math.huge
+         for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == itemName and (obj:IsA("Model") or obj:IsA("BasePart")) then
+               local cf = obj:IsA("Model") and obj:GetPivot() or obj.CFrame
+               local dist = (cf.Position - player.Character.HumanoidRootPart.Position).Magnitude
+               if dist < shortest then
+                  closest = cf
+                  shortest = dist
+               end
             end
          end
-      end,
+         if closest then
+            player.Character:PivotTo(closest + Vector3.new(0, 5, 0))
+         end
+      end
    })
 end
 
-print("🔥 FlareHub V2 - FULL 99 NIGHTS ITEMS + GUNS LOADED!")
-
+print("🔥 FlareHub V2 - RAYGULL 99 NIGHTS INSPIRED!")
