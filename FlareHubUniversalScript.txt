@@ -1,24 +1,112 @@
--- 🔥 FlareHub - SMOOTH 360° CAMERA RELATIVE FLY
+-- 🔥 FlareHub V2 - STEAL A BRAINROT AUTO STEAL + UNIVERSAL
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "🔥 FlareHub",
-   LoadingTitle = "FlareHub",
-   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed",
+   Name = "🔥 FlareHub V2",
+   LoadingTitle = "FlareHub V2",
+   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed • Brainrot",
    ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FlareConfig" },
    Discord = { Enabled = false },
    KeySystem = false
 })
 
 local Tab = Window:CreateTab("Main", 4483362458)
+local BrainrotTab -- Will be created conditionally
 
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
 
--- Test button
+-- GAME DETECTION
+local function isStealABrainrot()
+   local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
+   return gameName:find("steal") and gameName:find("brainrot")
+end
+
+-- Create Brainrot Tab ONLY if in Steal a Brainrot
+if isStealABrainrot() then
+   BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
+   
+   -- AUTO STEAL BRAINROT
+   BrainrotTab:CreateToggle({
+      Name = "🤖 Auto Steal Brainrots",
+      CurrentValue = false,
+      Flag = "AutoStealToggle",
+      Callback = function(Value)
+         getgenv().AutoStealEnabled = Value
+         if Value then
+            spawn(function()
+               while getgenv().AutoStealEnabled do
+                  -- Find nearest stealable brainrot
+                  local closestBrainrot = nil
+                  local shortestDistance = math.huge
+                  
+                  for _, obj in pairs(workspace:GetDescendants()) do
+                     if obj.Name:lower():find("brainrot") and obj:IsA("BasePart") and obj.Parent then
+                        local distance = (obj.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                        if distance < shortestDistance then
+                           closestBrainrot = obj
+                           shortestDistance = distance
+                        end
+                     end
+                  end
+                  
+                  if closestBrainrot and shortestDistance < 50 then
+                     -- Teleport to brainrot and steal
+                     player.Character.HumanoidRootPart.CFrame = closestBrainrot.CFrame * CFrame.new(0, 5, 0)
+                     fireclickdetector(closestBrainrot:FindFirstChildOfClass("ClickDetector"))
+                  end
+                  
+                  wait(0.1)
+               end
+            end)
+         end
+      end,
+   })
+   
+   -- AUTO BASE BUILD
+   BrainrotTab:CreateToggle({
+      Name = "🏗️ Auto Base Build",
+      CurrentValue = false,
+      Flag = "AutoBuildToggle",
+      Callback = function(Value)
+         getgenv().AutoBuildEnabled = Value
+      end,
+   })
+   
+   -- ANTI RAGDOLL
+   BrainrotTab:CreateToggle({
+      Name = "🛡️ Anti Ragdoll",
+      CurrentValue = false,
+      Flag = "AntiRagdollToggle",
+      Callback = function(Value)
+         getgenv().AntiRagdoll = Value
+         if player.Character then
+            for _, part in pairs(player.Character:GetChildren()) do
+               if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                  part.CanCollide = Value
+               end
+            end
+         end
+      end,
+   })
+   
+   -- SPEED BOOST
+   BrainrotTab:CreateSlider({
+      Name = "🚀 Speed Boost",
+      Range = {16, 500},
+      Increment = 10,
+      CurrentValue = 50,
+      Flag = "BrainrotSpeed",
+      Callback = function(Value)
+         local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+         if humanoid then humanoid.WalkSpeed = Value end
+      end,
+   })
+end
+
+-- MAIN TAB (Always visible)
 Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() end })
 
--- Noclip
 Tab:CreateToggle({
    Name = "✨ Noclip",
    CurrentValue = false,
@@ -40,7 +128,6 @@ Tab:CreateToggle({
    end,
 })
 
--- Fly Speed
 Tab:CreateSlider({
    Name = "Fly Speed",
    Range = {50, 300},
@@ -50,7 +137,7 @@ Tab:CreateSlider({
    Callback = function(Value) getgenv().FlySpeed = Value end,
 })
 
--- SMOOTH 360° FLY
+-- SMOOTH FLY (same as before)
 Tab:CreateToggle({
    Name = "🕊️ Fly",
    CurrentValue = false,
@@ -99,22 +186,16 @@ Tab:CreateToggle({
             local camRight = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
             
             if moveDir.Magnitude > 0.05 then
-               -- Horizontal plane movement (forward/back, left/right)
                local horizontalMove = horizontalForward * -moveDir.Z + camRight * moveDir.X
-               
-               -- Vertical from joystick Y
                local verticalMove = Vector3.new(0, moveDir.Y * speed, 0)
-               
                local targetVelocity = (horizontalMove * speed) + verticalMove
                
-               -- SMOOTH INTERPOLATION (15% per frame)
                local currentVelocity = getgenv().lastVelocity or Vector3.new(0, 0, 0)
                local lerpVelocity = currentVelocity:Lerp(targetVelocity, 0.15)
                
                bodyVelocity.Velocity = lerpVelocity
                getgenv().lastVelocity = lerpVelocity
             else
-               -- SMOOTH STOP
                local currentVelocity = getgenv().lastVelocity or Vector3.new(0, 0, 0)
                local lerpVelocity = currentVelocity:Lerp(Vector3.new(0, 0, 0), 0.15)
                
@@ -135,7 +216,6 @@ Tab:CreateToggle({
    end,
 })
 
--- Walkspeed
 Tab:CreateSlider({
    Name = "Walkspeed",
    Range = {16, 200},
@@ -148,15 +228,17 @@ Tab:CreateSlider({
    end,
 })
 
--- ESP Section
-local ESPSection = Tab:CreateSection("👁️ ESP Settings")
-
--- ESP Toggle (basic implementation)
-Tab:CreateToggle({
-   Name = "Player ESP",
-   CurrentValue = false,
-   Flag = "MasterESP",
-   Callback = function(Value)
-      getgenv().MasterESP = Value
-   end,
-})
+-- GAME DETECTION NOTIFICATION
+if isStealABrainrot() then
+   Rayfield:Notify({
+      Title = "🧠 Steal a Brainrot Detected!",
+      Content = "Brainrot tab loaded with Auto Steal!",
+      Duration = 5
+   })
+else
+   Rayfield:Notify({
+      Title = "🔥 FlareHub V2 Loaded",
+      Content = "Smooth fly + universal features ready!",
+      Duration = 3
+   })
+end
