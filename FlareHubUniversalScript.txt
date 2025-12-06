@@ -78,24 +78,55 @@ if currentGame == "99NIGHTS" then
    
    local BringSection = NightsTab:CreateSection("📦 Bring Items")
    
-   -- DYNAMIC ITEM SCANNER
-   local function scanWorkspaceItems()
+   -- 99 NIGHTS PICKUP ITEM FILTER - ONLY COLLECTIBLES
+   local function isPickupItem(obj)
+      if not obj:IsA("BasePart") then return false end
+      
+      local name = obj.Name:lower()
+      local keywords = {
+         -- RESOURCES
+         "wood", "log", "coal", "scrap", "metal", "sheet", "tyre", "tire", "ufo", "component",
+         -- FOOD
+         "morsel", "apple", "berry", "carrot", "corn", "pumpkin", "chili", "steak", "ribs",
+         "fish", "eel", "shark", "salmon", "cake", "pie", "stew", "soup", "sandwich",
+         -- HEALING
+         "bandage", "medkit", "first aid", "health",
+         -- SEEDS
+         "seed",
+         -- CRAFTING
+         "trim kit", "armor", "axe", "pickaxe", "shovel",
+         -- GEMSTONES
+         "diamond", "gem", "crystal"
+      }
+      
+      -- Exclude junk/particles/decorations
+      local exclude = {
+         "particle", "effect", "scrapper", "scrapperparticle", "light", "glow", "fire",
+         "smoke", "spark", "debris", "chunk", "rock", "stone", "bush", "grass", "leaf"
+      }
+      
+      for _, exc in pairs(exclude) do
+         if name:find(exc) then return false end
+      end
+      
+      for _, keyword in pairs(keywords) do
+         if name:find(keyword) then 
+            return obj.Size.Magnitude > 0.1 -- Must be physical size
+         end
+      end
+      
+      return false
+   end
+   
+   -- DYNAMIC ITEM SCANNER - ONLY PICKUP ITEMS
+   local function scanPickupItems()
       local items = {}
       local scannedNames = {}
       
       for _, obj in pairs(workspace:GetDescendants()) do
-         if obj:IsA("BasePart") and obj.Name ~= "" and obj.Parent ~= player.Character then
-            local name = obj.Name:lower()
-            -- Filter for common 99 Nights items
-            if name:find("wood") or name:find("food") or name:find("apple") or name:find("berry") or 
-               name:find("diamond") or name:find("seed") or name:find("trim") or 
-               name:find("metal") or name:find("scrap") or name:find("steak") or
-               name:find("fish") or name:find("cake") or name:find("pumpkin") then
-               if not scannedNames[name] then
-                  scannedNames[name] = true
-                  table.insert(items, obj.Name)
-               end
-            end
+         if isPickupItem(obj) and obj.Parent ~= player.Character and not scannedNames[obj.Name] then
+            scannedNames[obj.Name] = true
+            table.insert(items, obj.Name)
          end
       end
       
@@ -105,37 +136,47 @@ if currentGame == "99NIGHTS" then
    
    local Dropdown
    local function updateItemDropdown()
-      local items = scanWorkspaceItems()
+      local items = scanPickupItems()
       if #items > 0 then
          Dropdown:Refresh(items, true)
          Dropdown:Set(items[1])
+         Rayfield:Notify({
+            Title = "Scan Complete", 
+            Content = "Found " .. #items .. " pickup items!", 
+            Duration = 2.5
+         })
+      else
+         Dropdown:Refresh({"No items found"}, true)
       end
    end
    
    NightsTab:CreateButton({
-      Name = "🔍 Scan Items",
+      Name = "🔍 Scan Pickup Items",
       Callback = function()
          updateItemDropdown()
-         Rayfield:Notify({Title = "Scan Complete", Content = "Found " .. #scanWorkspaceItems() .. " item types!", Duration = 3})
       end
    })
    
    Dropdown = NightsTab:CreateDropdown({
       Name = "🎯 Bring Item",
-      Options = {"Scanning..."},
+      Options = {"Scan first!"},
       CurrentOption = "None",
       Flag = "BringItem99Nights",
       Callback = function(Option)
-         if Option == "None" then return end
+         if Option == "None" or Option == "Scan first!" or Option == "No items found" then return end
          
          local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if not rootPart then return end
          
          local brought = 0
          for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and obj.Name == Option and obj.Parent ~= player.Character then
+            if isPickupItem(obj) and obj.Name == Option then
                pcall(function()
-                  obj.CFrame = rootPart.CFrame * CFrame.new(math.random(-3,3), math.random(1,3), -5)
+                  obj.CFrame = rootPart.CFrame * CFrame.new(
+                     math.random(-4,4), 
+                     math.random(1,4), 
+                     -6
+                  )
                   brought = brought + 1
                end)
             end
@@ -149,40 +190,45 @@ if currentGame == "99NIGHTS" then
       end
    })
    
-   -- Quick bring buttons (backup)
+   -- Quick bring buttons - pickup items only
    NightsTab:CreateButton({
-      Name = "📦 Bring All Wood",
+      Name = "🌲 Bring All Wood/Logs",
       Callback = function()
          local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if not rootPart then return end
          
          local count = 0
          for _, item in pairs(workspace:GetDescendants()) do
-            if item:IsA("BasePart") and item.Name:lower():find("wood") then
-               item.CFrame = rootPart.CFrame * CFrame.new(0, 0, -3)
+            if isPickupItem(item) and item.Name:lower():find("wood") then
+               item.CFrame = rootPart.CFrame * CFrame.new(math.random(-3,3), 2, -5)
                count = count + 1
             end
          end
-         Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " wood!", Duration = 3})
+         Rayfield:Notify({Title = "Wood", Content = "Brought " .. count .. " wood!", Duration = 3})
       end,
    })
    
    NightsTab:CreateButton({
-      Name = "🍎 Bring All Food",
+      Name = "🍖 Bring All Food",
       Callback = function()
          local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if not rootPart then return end
          
          local count = 0
+         local foodKeywords = {"morsel", "apple", "berry", "carrot", "steak", "fish", "cake"}
          for _, item in pairs(workspace:GetDescendants()) do
-            local name = item.Name:lower()
-            if item:IsA("BasePart") and (name:find("food") or name:find("apple") or name:find("berry") or 
-               name:find("cake") or name:find("steak") or name:find("fish")) then
-               item.CFrame = rootPart.CFrame * CFrame.new(2, 0, -3)
-               count = count + 1
+            if isPickupItem(item) then
+               local name = item.Name:lower()
+               for _, keyword in pairs(foodKeywords) do
+                  if name:find(keyword) then
+                     item.CFrame = rootPart.CFrame * CFrame.new(math.random(-3,3), 2, -5)
+                     count = count + 1
+                     break
+                  end
+               end
             end
          end
-         Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " food!", Duration = 3})
+         Rayfield:Notify({Title = "Food", Content = "Brought " .. count .. " food!", Duration = 3})
       end,
    })
    
@@ -194,12 +240,12 @@ if currentGame == "99NIGHTS" then
          
          local count = 0
          for _, item in pairs(workspace:GetDescendants()) do
-            if item:IsA("BasePart") and item.Name:lower():find("diamond") then
-               item.CFrame = rootPart.CFrame * CFrame.new(-2, 0, -3)
+            if isPickupItem(item) and item.Name:lower():find("diamond") then
+               item.CFrame = rootPart.CFrame * CFrame.new(0, 3, -5)
                count = count + 1
             end
          end
-         Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " diamonds!", Duration = 3})
+         Rayfield:Notify({Title = "Diamonds", Content = "Brought " .. count .. " diamonds!", Duration = 3})
       end,
    })
 
