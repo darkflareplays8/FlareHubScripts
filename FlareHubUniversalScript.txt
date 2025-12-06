@@ -114,48 +114,54 @@ if currentGame == "99NIGHTS" then
    
    local BringSection = NightsTab:CreateSection("📦 Bring Items")
    
-   -- COMPLETE 99 NIGHTS ITEM LIST [web:1]
+   -- **COMPLETE 99 NIGHTS ITEM LIST** - EVERY SINGLE ITEM FROM ALL SOURCES [web:1][web:25][web:27][web:28]
    local all99Items = {
-      -- FOOD ITEMS
-      "Apple", "BBQ Ribs", "Berry", "Cake", "Candy Apple", "Candy Corn", "Carrot", 
-      "Carrot Cake", "Char", "Chili", "Clownfish", "Corn", "Cotton Candy", "Eel", 
-      "Hearty Stew", "Jar o' Jelly", "Jellyfish", "Lava Eel", "Lionfish", "Mackerel",
-      "Meat? Sandwich", "Morsel", "Pumpkin", "Pumpkin Pie", "Pumpkin Soup", "Ribs", 
-      "Salmon", "Seafood Chowder", "Seasoning", "Shark", "Steak", "Steak Dinner", 
-      "Stew", "Swordfish",
+      -- 🌽 FOOD (35+ items)
+      "Apple", "BBQ Ribs", "Berry", "Cake", "Candy Apple", "Candy Corn", "Carrot", "Carrot Cake", 
+      "Char", "Chili", "Clownfish", "Corn", "Cotton Candy", "Eel", "Hearty Stew", "Jar o' Jelly",
+      "Jellyfish", "Lava Eel", "Lionfish", "Mackerel", "Meat? Sandwich", "Morsel", "Pumpkin",
+      "Pumpkin Pie", "Pumpkin Soup", "Ribs", "Salmon", "Seafood Chowder", "Seasoning", "Shark",
+      "Steak", "Steak Dinner", "Stew", "Swordfish", "Cornucopia",
       
-      -- SEEDS
+      -- 🌱 SEEDS
       "Berry Seeds", "Cavevine Seeds", "Chili Seeds", "Dripleaf Seeds", "Firefly Seeds",
       "Flower Seeds", "Mandrake Seeds", "Moonflower Seeds", "Stareweed Seeds",
       
-      -- TRIM KITS & MATERIALS
-      "Armor Trim Kit", "Axe Trim Kit", "Wood", "Wood Log", "Scrap", "Sheet Metal", 
-      "Tyre", "UFO Component", "UFO Scrap", "UFO Junk", "Washing Machine",
+      -- 🛠️ MATERIALS & SCRAP (COMPLETE LIST)
+      "Wood", "Wood Log", "Scrap", "Sheet Metal", "Tyre", "Tire", "UFO Component", 
+      "UFO Scrap", "UFO Junk", "Washing Machine", "Broken Fan", "Broken Microwave",
+      "Old Radio", "Bolt", "CornerWedge", "Gold Wedge",
       
-      -- HEALING & MEDICAL
+      -- 🩹 HEALING
       "Bandage", "Medkit", "First Aid",
       
-      -- GUNS & WEAPONS (from wiki/categories)
-      "Gun", "Pistol", "Rifle", "Shotgun", "Bear Trap", "Bolt",
+      -- 🔫 **GUNS & WEAPONS** 
+      "Gun", "Pistol", "Rifle", "Shotgun", "Ray Gun", "Chainsaw", "Bear Trap", "Bolt",
       
-      -- RESOURCES
-      "Coal", "Diamond", "Gem", "Crystal"
+      -- 💎 GEMS & RESOURCES
+      "Coal", "Diamond", "Gem", "Crystal", "Cultist Gem", "Forest Gem", "Gold Shard", 
+      "Meteor Shard",
+      
+      -- 🔑 KEYS
+      "Blue Key", "Frog Key", "Grey Key", "Red Key", "Yellow Key"
    }
    
-   -- FILTER FUNCTION FOR ACTUAL PICKUPS
+   -- SMART FILTER - Matches workspace items against COMPLETE list
    local function isValidPickup(obj)
-      if not obj:IsA("BasePart") or obj.Size.Magnitude < 0.3 then return false end
+      if not obj:IsA("BasePart") or obj.Size.Magnitude < 0.2 then return false end
       if obj.Parent == player.Character or not obj.Parent then return false end
       
-      local name = obj.Name
-      -- Check if matches any 99 Nights item
+      local name = obj.Name:lower()
+      local junkWords = {"particle", "effect", "light", "fire", "smoke", "glow", "scrapper", "debris", "chunk"}
+      
+      -- Block junk first
+      for _, junk in pairs(junkWords) do
+         if name:find(junk) then return false end
+      end
+      
+      -- Match against ALL 99 items + guns
       for _, itemName in pairs(all99Items) do
-         if name:lower():find(itemName:lower()) or itemName:lower():find(name:lower()) then
-            -- Exclude obvious junk
-            local junkWords = {"particle", "effect", "light", "fire", "smoke", "glow", "scrapper"}
-            for _, junk in pairs(junkWords) do
-               if name:lower():find(junk) then return false end
-            end
+         if name:find(itemName:lower()) or itemName:lower():find(name) then
             return true
          end
       end
@@ -183,29 +189,27 @@ if currentGame == "99NIGHTS" then
       if #realItems > 0 then
          Dropdown:Refresh(realItems, true)
          Dropdown:Set(realItems[1])
-         Rayfield:Notify({Title = "Scan Complete", Content = #realItems .. " real items found!", Duration = 3})
+         Rayfield:Notify({Title = "🔍 SCAN COMPLETE", Content = #realItems .. " REAL 99 NIGHTS ITEMS FOUND!", Duration = 4})
       else
-         Dropdown:Refresh({"No items found"}, true)
+         Dropdown:Refresh({"No pickup items"}, true)
       end
    end
    
-   -- SCAN BUTTON
    NightsTab:CreateButton({
-      Name = "🔍 Scan Real Items",
+      Name = "🔍 SCAN ALL 99 NIGHTS ITEMS",
       Callback = function()
          updateItemList()
       end
    })
    
-   -- DYNAMIC DROPDOWN
    Dropdown = NightsTab:CreateDropdown({
-      Name = "🎯 Bring Item",
+      Name = "🎯 BRING ITEM",
       Options = {"Scan first!"},
       CurrentOption = {"Scan first!"},
       Flag = "Bring99Nights",
       Callback = function(Option)
          local selected = Option[1]
-         if selected == "Scan first!" or selected == "No items found" then return end
+         if selected == "Scan first!" or selected == "No pickup items" then return end
          
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if not root then return end
@@ -214,23 +218,47 @@ if currentGame == "99NIGHTS" then
          for _, obj in pairs(workspace:GetDescendants()) do
             if isValidPickup(obj) and obj.Name == selected then
                pcall(function()
-                  obj.CFrame = root.CFrame * CFrame.new(math.random(-4,4), math.random(2,4), -6)
+                  obj.CFrame = root.CFrame * CFrame.new(math.random(-5,5), math.random(2,5), -7)
                   count = count + 1
                end)
             end
          end
          
          Rayfield:Notify({
-            Title = "Bring Complete",
+            Title = "✅ BRING COMPLETE",
             Content = "Brought " .. count .. " " .. selected .. "!",
-            Duration = 3
+            Duration = 4
          })
       end
    })
    
-   -- ORIGINAL QUICK BUTTONS (ENHANCED)
+   -- QUICK GUN/MATERIAL BUTTONS
    NightsTab:CreateButton({
-      Name = "🌲 Bring All Wood/Logs",
+      Name = "🔫 Bring All Guns/Weapons",
+      Callback = function()
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if root then
+            local count = 0
+            local weapons = {"gun", "pistol", "rifle", "shotgun", "ray gun", "chainsaw"}
+            for _, item in pairs(workspace:GetDescendants()) do
+               if isValidPickup(item) then
+                  local name = item.Name:lower()
+                  for _, weapon in pairs(weapons) do
+                     if name:find(weapon) then
+                        item.CFrame = root.CFrame * CFrame.new(math.random(-3,3), 3, -4)
+                        count = count + 1
+                        break
+                     end
+                  end
+               end
+            end
+            Rayfield:Notify({Title = "🔫 GUNS", Content = count .. " weapons brought!", Duration = 3})
+         end
+      end
+   })
+   
+   NightsTab:CreateButton({
+      Name = "🌲 Bring All Wood",
       Callback = function()
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if root then
@@ -241,48 +269,7 @@ if currentGame == "99NIGHTS" then
                   count = count + 1
                end
             end
-            Rayfield:Notify({Title = "Wood", Content = count .. " wood brought!", Duration = 3})
-         end
-      end,
-   })
-   
-   NightsTab:CreateButton({
-      Name = "🍖 Bring All Food",
-      Callback = function()
-         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-         if root then
-            local count = 0
-            local foodItems = {"apple", "berry", "morsel", "carrot", "steak", "ribs", "fish"}
-            for _, item in pairs(workspace:GetDescendants()) do
-               if isValidPickup(item) then
-                  local name = item.Name:lower()
-                  for _, food in pairs(foodItems) do
-                     if name:find(food) then
-                        item.CFrame = root.CFrame * CFrame.new(2, 0, -3)
-                        count = count + 1
-                        break
-                     end
-                  end
-               end
-            end
-            Rayfield:Notify({Title = "Food", Content = count .. " food brought!", Duration = 3})
-         end
-      end,
-   })
-   
-   NightsTab:CreateButton({
-      Name = "💎 Bring All Diamonds",
-      Callback = function()
-         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-         if root then
-            local count = 0
-            for _, item in pairs(workspace:GetDescendants()) do
-               if isValidPickup(item) and item.Name:lower():find("diamond") then
-                  item.CFrame = root.CFrame * CFrame.new(-2, 0, -3)
-                  count = count + 1
-               end
-            end
-            Rayfield:Notify({Title = "Diamonds", Content = count .. " diamonds brought!", Duration = 3})
+            Rayfield:Notify({Title = "🌲 WOOD", Content = count .. " wood brought!", Duration = 3})
          end
       end,
    })
@@ -299,18 +286,7 @@ if currentGame == "99NIGHTS" then
          end
       end,
    })
-   NightsTab:CreateButton({
-      Name = "🌳 TP to Trees",
-      Callback = function()
-         for _, tree in pairs(workspace:GetDescendants()) do
-            if tree.Name:lower():find("tree") and tree:IsA("BasePart") then
-               player.Character.HumanoidRootPart.CFrame = tree.CFrame + Vector3.new(0, 5, 0)
-               break
-            end
-         end
-         Rayfield:Notify({Title = "Teleport", Content = "Teleported to trees!", Duration = 2})
-      end,
-   })
 end
 
-print("🔥 FlareHub V2 loaded - COMPLETE 99 NIGHTS ITEMS!")
+print("🔥 FlareHub V2 - FULL 99 NIGHTS ITEMS + GUNS LOADED!")
+
