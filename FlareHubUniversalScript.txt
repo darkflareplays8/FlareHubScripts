@@ -1,28 +1,5 @@
--- 🔥 FlareHub V2 - STEALTH HITBOX BYPASS (SAB SAFE)
+-- 🔥 FlareHub V2 - SAB AUTO COLLECT FIXED (NO TP + NO KICK)
 getgenv().SecureMode = true
-getgenv().AntiCheatBypassActive = true
-
--- ANTI-CHAT BYPASS FIRST
-local mt = getrawmetatable(game)
-local oldNamecall = mt.__namecall
-setreadonly(mt, false)
-
-mt.__namecall = newcclosure(function(self, ...)
-   local method = getnamecallmethod()
-   local args = {...}
-   
-   -- BLOCK SAB ANTI-CHEAT REMOTES [web:395]
-   local antiCheatNames = {"AntiCheat", "AC", "Kick", "Ban", "Report", "Check"}
-   for _, name in pairs(antiCheatNames) do
-      if string.find(self.Name:lower(), name:lower()) and method == "FireServer" then
-         return wait(9e9)
-      end
-   end
-   
-   return oldNamecall(self, ...)
-end)
-
-setreadonly(mt, true)
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 Rayfield:LoadConfiguration()
@@ -30,7 +7,7 @@ Rayfield:LoadConfiguration()
 local Window = Rayfield:CreateWindow({
    Name = "🔥 FlareHub V2",
    LoadingTitle = "FlareHub V2",
-   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed • Brainrot",
+   LoadingSubtitle = "Godmode • Fly • Noclip • Walkspeed • Brainrot",
    ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FlareConfig" },
    Discord = { Enabled = false },
    KeySystem = false
@@ -67,43 +44,30 @@ local function safeSetWalkspeed(humanoid, speed)
    end)
 end
 
--- STEALTH HITBOX (Anti-detection)
-local stealthConnection
-local function toggleStealthHitbox(Value)
+-- TRUE GODMODE
+local godmodeConnection
+local function toggleGodmode(Value)
    if not player.Character then return end
-   local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-   if not rootPart then return end
+   local humanoid = player.Character:FindFirstChild("Humanoid")
+   if not humanoid then return end
    
    if Value then
-      -- STEALTH HITBOX - Network invisible
-      rootPart.Anchored = false
-      rootPart.CanCollide = false
-      
-      stealthConnection = RunService.Stepped:Connect(function()
-         if player.Character and rootPart.Parent then
-            -- Keep hitbox slightly offset (undetectable)
-            local head = player.Character:FindFirstChild("Head")
-            if head then
-               rootPart.CFrame = head.CFrame * CFrame.new(0, -3, 0)
-               rootPart.Size = Vector3.new(4, 6, 2)  -- Normal size [web:384]
-            end
+      godmodeConnection = humanoid.HealthChanged:Connect(function(health)
+         if health < humanoid.MaxHealth then
+            humanoid.Health = humanoid.MaxHealth
          end
       end)
-      
    else
-      if stealthConnection then stealthConnection:Disconnect() end
-      rootPart.Anchored = false
-      rootPart.CanCollide = true
-      rootPart.Size = Vector3.new(2, 2, 1)
+      if godmodeConnection then godmodeConnection:Disconnect() end
    end
 end
 
--- Steal a Brainrot Tab
+-- Steal a Brainrot Tab - FIXED AUTO COLLECT
 if isStealABrainrot() then
    BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
    
    BrainrotTab:CreateToggle({
-      Name = "🤖 Auto Collect (Safe)",
+      Name = "🤖 Auto Collect (NO TP - SAFE)",
       CurrentValue = false,
       Flag = "AutoCollectToggle",
       Callback = function(Value)
@@ -112,19 +76,60 @@ if isStealABrainrot() then
             spawn(function()
                while getgenv().AutoCollectEnabled do
                   pcall(function()
+                     -- SCAN FOR YOUR BASE COLLECTOR (no TP)
                      for _, obj in pairs(workspace:GetDescendants()) do
-                        if obj.Name:lower():find("collect") or obj.Name:lower():find("drop") then
-                           local distance = (obj.Position - player.Character.Head.Position).Magnitude
-                           if distance < 20 then
+                        if obj:IsA("BasePart") and (
+                           obj.Name:lower():find("collect") or 
+                           obj.Name:lower():find("dropoff") or 
+                           obj.Name:lower():find("deposit") or
+                           obj.Name:lower():find("cash")
+                        ) then
+                           local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
+                           if distance < 40 then  -- Larger safe range
+                              -- FIRE FROM DISTANCE (NO TP = NO DETECT)
                               local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
-                              if clickDetector then fireclickdetector(clickDetector) end
-                              wait(2)
-                              break
+                              if clickDetector then
+                                 fireclickdetector(clickDetector)
+                                 Rayfield:Notify({
+                                    Title = "Auto Collect",
+                                    Content = "Collected from " .. obj.Name,
+                                    Duration = 2
+                                 })
+                                 wait(4)  -- LONG SAB delay
+                                 break
+                              end
                            end
                         end
                      end
                   end)
-                  wait(3)
+                  wait(5)  -- EXTRA SAFE LOOP
+               end
+            end)
+         end
+      end,
+   })
+   
+   BrainrotTab:CreateToggle({
+      Name = "🔒 Auto Lock Base",
+      CurrentValue = false,
+      Flag = "AutoLockToggle",
+      Callback = function(Value)
+         getgenv().AutoLockEnabled = Value
+         if Value then
+            spawn(function()
+               while getgenv().AutoLockEnabled do
+                  -- Find lock button in your base
+                  for _, obj in pairs(workspace:GetDescendants()) do
+                     if obj.Name:lower():find("lock") and obj:FindFirstChildOfClass("ClickDetector") then
+                        local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
+                        if distance < 50 then
+                           fireclickdetector(obj:FindFirstChildOfClass("ClickDetector"))
+                           wait(10)
+                           break
+                        end
+                     end
+                  end
+                  wait(15)
                end
             end)
          end
@@ -133,16 +138,13 @@ if isStealABrainrot() then
 end
 
 -- MAIN TAB
-Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() print("FlareHub BYPASS ACTIVE!") end })
+Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() print("FlareHub SAB SAFE!") end })
 
--- STEALTH HITBOX (SAB SAFE)
 Tab:CreateToggle({
-   Name = "🌌 Stealth Hitbox",
+   Name = "💖 True Godmode",
    CurrentValue = false,
-   Flag = "StealthHitboxToggle",
-   Callback = function(Value)
-      toggleStealthHitbox(Value)
-   end,
+   Flag = "GodmodeToggle",
+   Callback = function(Value) toggleGodmode(Value) end,
 })
 
 Tab:CreateToggle({
@@ -176,7 +178,6 @@ Tab:CreateSlider({
    Callback = function(Value) getgenv().FlySpeed = Value end,
 })
 
--- SAFE FLY
 Tab:CreateToggle({
    Name = "🕊️ Fly",
    CurrentValue = false,
@@ -189,7 +190,6 @@ Tab:CreateToggle({
       
       if Value then
          humanoid.PlatformStand = true
-         
          local bodyVelocity = Instance.new("BodyVelocity")
          bodyVelocity.MaxForce = Vector3.new(2000, 2000, 2000)
          bodyVelocity.Velocity = Vector3.new(0, 0, 0)
@@ -242,11 +242,12 @@ Tab:CreateSlider({
    end,
 })
 
--- SAB SAFE NOTIFICATION
+-- SAB NOTIFICATION
 if isStealABrainrot() then
    Rayfield:Notify({
-      Title = "🧠 SAB BYPASS ACTIVE",
-      Content = "Stealth Hitbox + Anti-Cheat Blocked!",
+      Title = "🧠 SAB ULTRA SAFE",
+      Content = "Auto Collect FIXED - NO TP + 5s delays!",
       Duration = 6
    })
 end
+
