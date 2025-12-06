@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - STEAL A BRAINROT AUTO STEAL + UNIVERSAL
+-- 🔥 FlareHub V2 - CLEAN STEAL A BRAINROT FEATURES
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
@@ -11,7 +11,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Tab = Window:CreateTab("Main", 4483362458)
-local BrainrotTab -- Will be created conditionally
+local BrainrotTab
 
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
@@ -36,7 +36,6 @@ if isStealABrainrot() then
          if Value then
             spawn(function()
                while getgenv().AutoStealEnabled do
-                  -- Find nearest stealable brainrot
                   local closestBrainrot = nil
                   local shortestDistance = math.huge
                   
@@ -51,7 +50,6 @@ if isStealABrainrot() then
                   end
                   
                   if closestBrainrot and shortestDistance < 50 then
-                     -- Teleport to brainrot and steal
                      player.Character.HumanoidRootPart.CFrame = closestBrainrot.CFrame * CFrame.new(0, 5, 0)
                      fireclickdetector(closestBrainrot:FindFirstChildOfClass("ClickDetector"))
                   end
@@ -63,17 +61,7 @@ if isStealABrainrot() then
       end,
    })
    
-   -- AUTO BASE BUILD
-   BrainrotTab:CreateToggle({
-      Name = "🏗️ Auto Base Build",
-      CurrentValue = false,
-      Flag = "AutoBuildToggle",
-      Callback = function(Value)
-         getgenv().AutoBuildEnabled = Value
-      end,
-   })
-   
-   -- ANTI RAGDOLL
+   -- ANTI RAGDOLL (Safe)
    BrainrotTab:CreateToggle({
       Name = "🛡️ Anti Ragdoll",
       CurrentValue = false,
@@ -87,19 +75,6 @@ if isStealABrainrot() then
                end
             end
          end
-      end,
-   })
-   
-   -- SPEED BOOST
-   BrainrotTab:CreateSlider({
-      Name = "🚀 Speed Boost",
-      Range = {16, 500},
-      Increment = 10,
-      CurrentValue = 50,
-      Flag = "BrainrotSpeed",
-      Callback = function(Value)
-         local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-         if humanoid then humanoid.WalkSpeed = Value end
       end,
    })
 end
@@ -137,7 +112,7 @@ Tab:CreateSlider({
    Callback = function(Value) getgenv().FlySpeed = Value end,
 })
 
--- SMOOTH FLY (same as before)
+-- SMOOTH FLY (unchanged - perfect)
 Tab:CreateToggle({
    Name = "🕊️ Fly",
    CurrentValue = false,
@@ -218,7 +193,7 @@ Tab:CreateToggle({
 
 Tab:CreateSlider({
    Name = "Walkspeed",
-   Range = {16, 200},
+   Range = {16, 100},  -- SAFE RANGE (no kick)
    Increment = 1,
    CurrentValue = 16,
    Flag = "WalkspeedSlider",
@@ -228,17 +203,11 @@ Tab:CreateSlider({
    end,
 })
 
--- GAME DETECTION NOTIFICATION
+-- NOTIFICATION
 if isStealABrainrot() then
    Rayfield:Notify({
       Title = "🧠 Steal a Brainrot Detected!",
-      Content = "Brainrot tab loaded with Auto Steal!",
-      Duration = 5
-   })
-else
-   Rayfield:Notify({
-      Title = "🔥 FlareHub V2 Loaded",
-      Content = "Smooth fly + universal features ready!",
-      Duration = 3
+      Content = "Auto Steal + Anti Ragdoll ready!",
+      Duration = 4
    })
 end
