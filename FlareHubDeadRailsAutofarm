@@ -1,0 +1,220 @@
+-- 🔥 FlareHub V2 - DEAD RAILS AUTO BOND FARMER
+getgenv().SecureMode = true
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+Rayfield:LoadConfiguration()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🔥 FlareHub V2 - Dead Rails",
+   LoadingTitle = "Dead Rails Auto Bond",
+   LoadingSubtitle = "AFK Infinite Bonds • Auto Lobby • Auto Join",
+   ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "DeadRailsConfig" },
+   Discord = { Enabled = false },
+   KeySystem = false
+})
+
+local MainTab = Window:CreateTab("🚂 Dead Rails", 4483362458)
+local player = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+task.wait(1)
+
+-- **DEAD RAILS AUTO BOND STATE**
+getgenv().AutoBondEnabled = false
+getgenv().BondCount = 0
+getgenv().MaxBondsPerGame = 100
+local overlayGui = nil
+local bondConnection = nil
+
+-- **FULL SCREEN OVERLAY**
+local function createOverlay()
+   overlayGui = Instance.new("ScreenGui")
+   overlayGui.Name = "AutoBondOverlay"
+   overlayGui.Parent = game.CoreGui
+   overlayGui.ResetOnSpawn = false
+   overlayGui.IgnoreGuiInset = true
+   
+   local overlayFrame = Instance.new("Frame")
+   overlayFrame.Size = UDim2.new(1, 0, 1, 0)
+   overlayFrame.Position = UDim2.new(0, 0, 0, 0)
+   overlayFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+   overlayFrame.BackgroundTransparency = 0.3
+   overlayFrame.BorderSizePixel = 0
+   overlayFrame.Parent = overlayGui
+   
+   local statusLabel = Instance.new("TextLabel")
+   statusLabel.Size = UDim2.new(1, 0, 0.3, 0)
+   statusLabel.Position = UDim2.new(0, 0, 0.1, 0)
+   statusLabel.BackgroundTransparency = 1
+   statusLabel.Text = "🔥 AUTO BOND FARMING ACTIVE 🔥"
+   statusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+   statusLabel.TextScaled = true
+   statusLabel.Font = Enum.Font.GothamBold
+   statusLabel.Parent = overlayFrame
+   
+   local bondLabel = Instance.new("TextLabel")
+   bondLabel.Size = UDim2.new(1, 0, 0.2, 0)
+   bondLabel.Position = UDim2.new(0, 0, 0.4, 0)
+   bondLabel.BackgroundTransparency = 1
+   bondLabel.Text = "Bonds: 0/100"
+   bondLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+   bondLabel.TextScaled = true
+   bondLabel.Font = Enum.Font.Gotham
+   bondLabel.Parent = overlayFrame
+   
+   local statusLabel2 = Instance.new("TextLabel")
+   statusLabel2.Size = UDim2.new(1, 0, 0.2, 0)
+   statusLabel2.Position = UDim2.new(0, 0, 0.65, 0)
+   statusLabel2.BackgroundTransparency = 1
+   statusLabel2.Text = "Status: Waiting for game..."
+   statusLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
+   statusLabel2.TextScaled = true
+   statusLabel2.Font = Enum.Font.Gotham
+   statusLabel2.Parent = overlayFrame
+   
+   return overlayFrame, statusLabel, bondLabel, statusLabel2
+end
+
+-- **DEAD RAILS BOND COLLECTOR**
+local function collectBonds()
+   if not player.Character then return end
+   
+   -- Find and collect all bonds
+   for _, obj in pairs(workspace:GetDescendants()) do
+      if obj.Name:lower():find("bond") and obj:IsA("BasePart") then
+         pcall(function()
+            local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
+            if clickDetector then
+               fireclickdetector(clickDetector)
+               getgenv().BondCount = getgenv().BondCount + 1
+            end
+            
+            -- Teleport to bond for safety
+            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+               rootPart.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
+            end
+         end)
+      end
+   end
+end
+
+-- **AUTO BOND MAIN LOOP**
+local function startAutoBond()
+   getgenv().AutoBondEnabled = true
+   local overlayFrame, statusLabel, bondLabel, statusLabel2 = createOverlay()
+   
+   spawn(function()
+      while getgenv().AutoBondEnabled do
+         pcall(function()
+            -- Update overlay
+            bondLabel.Text = "Bonds: " .. getgenv().BondCount .. "/" .. getgenv().MaxBondsPerGame
+            statusLabel2.Text = "Status: Farming bonds..."
+            
+            -- Collect bonds
+            collectBonds()
+            
+            -- Check if max bonds reached
+            if getgenv().BondCount >= getgenv().MaxBondsPerGame then
+               statusLabel2.Text = "Status: Max bonds reached - Returning to lobby..."
+               wait(3)
+               
+               -- Leave game and return to lobby
+               game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+               wait(5)
+            end
+            
+            -- Auto rejoin if died or game ended
+            local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health <= 0 then
+               statusLabel2.Text = "Status: Died - Rejoining..."
+               wait(3)
+               game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+            end
+         end)
+         
+         wait(0.5)
+      end
+      
+      -- Cleanup overlay
+      if overlayGui then overlayGui:Destroy() end
+   end)
+end
+
+-- **MAIN UI**
+local AutoFarmSection = MainTab:CreateSection("🤖 Auto Bond Farm")
+
+MainTab:CreateSlider({
+   Name = "Max Bonds Per Game",
+   Range = {50, 200},
+   Increment = 10,
+   CurrentValue = 100,
+   Flag = "MaxBondsSlider",
+   Callback = function(Value)
+      getgenv().MaxBondsPerGame = Value
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "🚂 AUTO BOND FARM (Lobby)",
+   CurrentValue = false,
+   Flag = "AutoBondToggle",
+   Callback = function(Value)
+      if Value then
+         Rayfield:Notify({
+            Title = "🚂 AUTO BOND STARTED",
+            Content = "Full screen overlay active. Collecting " .. getgenv().MaxBondsPerGame .. " bonds then lobby...",
+            Duration = 5,
+            Image = 4483362458
+         })
+         startAutoBond()
+      else
+         getgenv().AutoBondEnabled = false
+         if overlayGui then overlayGui:Destroy() end
+         Rayfield:Notify({
+            Title = "🚂 AUTO BOND STOPPED",
+            Content = "Farm disabled.",
+            Duration = 3
+         })
+      end
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "🔄 RESET BOND COUNTER",
+   Callback = function()
+      getgenv().BondCount = 0
+      Rayfield:Notify({Title = "Counter", Content = "Bond counter reset!", Duration = 2})
+   end
+})
+
+MainTab:CreateButton({
+   Name = "❌ DESTROY OVERLAY",
+   Callback = function()
+      if overlayGui then
+         overlayGui:Destroy()
+         overlayGui = nil
+         Rayfield:Notify({Title = "Overlay", Content = "Full screen overlay destroyed!", Duration = 2})
+      end
+   end
+})
+
+-- **GAME DETECTION NOTIFICATION**
+spawn(function()
+   local success, result = pcall(function()
+      return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
+   end)
+   if success and result:lower():find("dead rails") then
+      Rayfield:Notify({
+         Title = "🚂 DEAD RAILS DETECTED",
+         Content = "Auto Bond Farmer ready! Turn on in lobby.",
+         Duration = 6,
+         Image = 4483362458
+      })
+   end
+end)
+
+print("🔥 FlareHub V2 - Dead Rails Auto Bond Farmer LOADED!")
