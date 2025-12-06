@@ -1,32 +1,95 @@
--- 🔥 FlareHub - PERFECT LIFT OFF + NO FLOATING
+-- 🔥 FlareHub V2 - FIXED FLY + NO BOLTS
+getgenv().SecureMode = true
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+Rayfield:LoadConfiguration()
 
 local Window = Rayfield:CreateWindow({
-   Name = "🔥 FlareHub",
-   LoadingTitle = "FlareHub",
-   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "FlareHub",
-      FileName = "FlareConfig"
-   },
+   Name = "🔥 FlareHub V2",
+   LoadingTitle = "FlareHub V2",
+   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed • SAB • 99 Nights",
+   ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FlareConfig" },
    Discord = { Enabled = false },
    KeySystem = false
 })
 
-local Tab = Window:CreateTab("Main", 4483362458)
+local MainTab = Window:CreateTab("🎮 Main", 4483362458)
+local SABTab
+local NightsTab
 
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
+task.wait(1)
 
--- Test button
-Tab:CreateButton({
-   Name = "✅ Test GUI",
-   Callback = function() end,
+-- AUTHORIZED USER CHECK
+local function isAuthorized()
+   return player.Name == "DarealBloxfruiter"
+end
+
+-- GAME DETECTION
+local function detectGame()
+   local success, result = pcall(function()
+      return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
+   end)
+   if success then
+      local gameName = result:lower()
+      if gameName:find("steal") and gameName:find("brainrot") then return "SAB" end
+      if gameName:find("night") and (gameName:find("forest") or gameName:find("99")) then return "99NIGHTS" end
+   end
+   return "UNIVERSAL"
+end
+
+local currentGame = detectGame()
+
+-- ULTRA SAFE WALKSPD
+local function safeSetWalkspeed(humanoid, speed)
+   local targetSpeed = math.clamp(speed, 16, 24)
+   spawn(function()
+      while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.1 do
+         local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.03
+         newSpeed = newSpeed + math.random(-1, 1) * 0.03
+         humanoid.WalkSpeed = math.clamp(newSpeed, 16, 24)
+         wait(0.4)
+      end
+   end)
+end
+
+-- TRUE GODMODE
+local godmodeConnection
+local function toggleGodmode(Value)
+   if not player.Character then return end
+   local humanoid = player.Character:FindFirstChild("Humanoid")
+   if not humanoid then return end
+   
+   if Value then
+      godmodeConnection = humanoid.HealthChanged:Connect(function(health)
+         if health < humanoid.MaxHealth then
+            humanoid.Health = humanoid.MaxHealth
+         end
+      end)
+   else
+      if godmodeConnection then godmodeConnection:Disconnect() end
+   end
+end
+
+-- 🎮 MAIN TAB CODE (EXACT COPY - FLY FIXED)
+MainTab:CreateButton({ 
+   Name = "✅ Test GUI", 
+   Callback = function() 
+      print("FlareHub Multi-Game READY!") 
+   end 
 })
 
--- Noclip
-Tab:CreateToggle({
+MainTab:CreateToggle({
+   Name = "💖 True Godmode",
+   CurrentValue = false,
+   Flag = "GodmodeToggle",
+   Callback = function(Value) 
+      toggleGodmode(Value) 
+   end,
+})
+
+MainTab:CreateToggle({
    Name = "✨ Noclip",
    CurrentValue = false,
    Flag = "NoclipToggle",
@@ -42,23 +105,24 @@ Tab:CreateToggle({
                end
             end
          end)
-      else if getgenv().NoclipConnection then getgenv().NoclipConnection:Disconnect() end
+      else 
+         if getgenv().NoclipConnection then getgenv().NoclipConnection:Disconnect() end
       end
    end,
 })
 
--- Fly Speed
-Tab:CreateSlider({
+MainTab:CreateSlider({
    Name = "Fly Speed",
-   Range = {50, 300},
+   Range = {50, 150},
    Increment = 10,
    CurrentValue = 100,
    Flag = "FlySpeedSlider",
-   Callback = function(Value) getgenv().FlySpeed = Value end,
+   Callback = function(Value) 
+      getgenv().FlySpeed = Value 
+   end,
 })
 
--- PERFECT FLY (Lifts off + stays still)
-Tab:CreateToggle({
+MainTab:CreateToggle({
    Name = "🕊️ Fly",
    CurrentValue = false,
    Flag = "FlyToggle",
@@ -70,19 +134,15 @@ Tab:CreateToggle({
       
       if Value then
          humanoid.PlatformStand = true
-         
-         -- INSTANT LIFT OFF
-         rootPart.CFrame = rootPart.CFrame + Vector3.new(0, 10, 0)
-         
          local bodyVelocity = Instance.new("BodyVelocity")
-         bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
+         bodyVelocity.MaxForce = Vector3.new(2000, 2000, 2000)
          bodyVelocity.Velocity = Vector3.new(0, 0, 0)
          bodyVelocity.Parent = rootPart
          
          local bodyGyro = Instance.new("BodyGyro")
-         bodyGyro.MaxTorque = Vector3.new(4000, 4000, 4000)
-         bodyGyro.P = 3000
-         bodyGyro.D = 500
+         bodyGyro.MaxTorque = Vector3.new(2000, 2000, 2000)
+         bodyGyro.P = 2000
+         bodyGyro.D = 300
          bodyGyro.CFrame = rootPart.CFrame
          bodyGyro.Parent = rootPart
          
@@ -90,23 +150,21 @@ Tab:CreateToggle({
          getgenv().FlyBodyGyro = bodyGyro
          
          getgenv().FlyConnection = RunService.Heartbeat:Connect(function()
-            if not rootPart.Parent then return end
-            
+            local camera = workspace.CurrentCamera
             local moveDir = humanoid.MoveDirection
             local speed = getgenv().FlySpeed or 100
             
             if moveDir.Magnitude > 0.05 then
-               -- RESPONSIVE MOVEMENT
-               local moveVector = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
-               bodyVelocity.Velocity = rootPart.CFrame:VectorToWorldSpace(moveVector)
+               local camForward = Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z).Unit
+               local camRight = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z).Unit
+               local velocity = (camForward * -moveDir.Z + camRight * moveDir.X + Vector3.new(0, moveDir.Y, 0)).Unit * speed
+               bodyVelocity.Velocity = velocity
             else
-               -- NO INPUT = PERFECT HOVER (no physics interference)
                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
             end
             
-            bodyGyro.CFrame = rootPart.CFrame
+            bodyGyro.CFrame = camera.CFrame
          end)
-         
       else
          humanoid.PlatformStand = false
          if getgenv().FlyBodyVelocity then getgenv().FlyBodyVelocity:Destroy() end
@@ -116,18 +174,161 @@ Tab:CreateToggle({
    end,
 })
 
--- Walkspeed
-Tab:CreateSlider({
-   Name = "Walkspeed",
-   Range = {16, 200},
+MainTab:CreateSlider({
+   Name = "Walkspeed (Safe)",
+   Range = {16, 24},
    Increment = 1,
    CurrentValue = 16,
    Flag = "WalkspeedSlider",
    Callback = function(Value)
       local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-      if humanoid then humanoid.WalkSpeed = Value end
+      if humanoid then safeSetWalkspeed(humanoid, Value) end
    end,
 })
 
--- ESP Section
-local ESPSection = Tab:CreateSection("👁️ ESP Settings")
+-- SAB TAB
+if currentGame == "SAB" then
+   SABTab = Window:CreateTab("🧠 SAB", 4483362458)
+   SABTab:CreateToggle({
+      Name = "🤖 Auto Collect",
+      CurrentValue = false,
+      Flag = "AutoCollectSAB",
+      Callback = function(Value)
+         getgenv().AutoCollectSAB = Value
+      end
+   })
+end
+
+-- 99 NIGHTS TAB - NO BOLTS FILTERED
+if currentGame == "99NIGHTS" then
+   NightsTab = Window:CreateTab("🌲 99 Nights", 1398837429)
+   
+   local BringSection = NightsTab:CreateSection("📦 Bring Items")
+   
+   -- RAYGULL'S ITEMS - NO BOLTS
+   local raygullItems = {
+      "Apple", "Bandage", "Bear", "Berry", "Broken Fan", "Broken Microwave", "Bunny", 
+      "Bunny Foot", "Cake", "Carrot", "Chilli", "Coal", "Log", "Medkit", "Morsel", "Raygun", 
+      "Revolver", "Rifle", "Sheet Metal", "Steak", "Tyre", "UFO Component", "UFO Junk"
+   }
+   
+   local function isReal99Item(obj)
+      if not obj:IsA("BasePart") then return false end
+      if obj.Parent == player.Character then return false end
+      if obj.Size.Magnitude < 0.5 then return false end
+      
+      -- **BLOCK BOLTS SPECIFICALLY**
+      if obj.Name:lower():find("bolt") then return false end
+      
+      local name = obj.Name
+      for _, item in pairs(raygullItems) do
+         if name:find(item) or item:find(name) then
+            return true
+         end
+      end
+      return false
+   end
+   
+   local function scan99Items()
+      local items = {}
+      local seen = {}
+      
+      for _, obj in pairs(workspace:GetDescendants()) do
+         if isReal99Item(obj) and not seen[obj.Name] then
+            seen[obj.Name] = true
+            table.insert(items, obj.Name)
+         end
+      end
+      
+      if #items == 0 then
+         for _, item in pairs(raygullItems) do
+            table.insert(items, item)
+         end
+      end
+      
+      table.sort(items)
+      return items
+   end
+   
+   local Dropdown
+   local function updateDropdown()
+      local items = scan99Items()
+      Dropdown:Refresh(items, true)
+      Dropdown:Set(items[1])
+      Rayfield:Notify({Title = "✅ 99 NIGHTS ITEMS", Content = #items .. " items loaded!", Duration = 3})
+   end
+   
+   NightsTab:CreateButton({
+      Name = "🔍 SCAN 99 NIGHTS ITEMS",
+      Callback = updateDropdown
+   })
+   
+   Dropdown = NightsTab:CreateDropdown({
+      Name = "🎯 BRING ITEM",
+      Options = {"Loading..."},
+      CurrentOption = {"Apple"},
+      Flag = "Bring99Nights",
+      Callback = function(Option)
+         local selected = Option[1]
+         
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if not root then return end
+         
+         local count = 0
+         for _, obj in pairs(workspace:GetDescendants()) do
+            if isReal99Item(obj) and (obj.Name == selected or obj.Name:find(selected)) then
+               obj.CFrame = root.CFrame * CFrame.new(math.random(-4,4), math.random(1,3), -6)
+               count = count + 1
+            end
+         end
+         
+         Rayfield:Notify({
+            Title = "✅ BROUGHT " .. count .. " " .. selected,
+            Duration = 3
+         })
+      end
+   })
+   
+   NightsTab:CreateButton({
+      Name = "🌲 Bring All Wood/Logs",
+      Callback = function()
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if root then
+            local count = 0
+            for _, obj in pairs(workspace:GetDescendants()) do
+               if obj:IsA("BasePart") and obj.Name:lower():find("log") then
+                  obj.CFrame = root.CFrame * CFrame.new(0, 0, -3)
+                  count = count + 1
+               end
+            end
+            Rayfield:Notify({Title = "🌲 WOOD", Content = count .. " logs!", Duration = 3})
+         end
+      end
+   })
+   
+   NightsTab:CreateButton({
+      Name = "🍎 Bring All Food",
+      Callback = function()
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if root then
+            local count = 0
+            local foods = {"Carrot", "Apple", "Berry", "Morsel"}
+            for _, obj in pairs(workspace:GetDescendants()) do
+               if obj:IsA("BasePart") then
+                  local name = obj.Name
+                  for _, food in pairs(foods) do
+                     if name:find(food) then
+                        obj.CFrame = root.CFrame * CFrame.new(2, 0, -3)
+                        count = count + 1
+                        break
+                     end
+                  end
+               end
+            end
+            Rayfield:Notify({Title = "🍎 FOOD", Content = count .. " food!", Duration = 3})
+         end
+      end
+   })
+end
+
+print("🔥 FlareHub V2 - FLY FIXED + NO BOLTS!")
