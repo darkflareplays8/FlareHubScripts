@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - RAYGULL 99 NIGHTS + FULL MAIN TAB
+-- 🔥 FlareHub V2 - COMPLETE MULTI-GAME (SAB + 99 NIGHTS)
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -14,12 +14,13 @@ local Window = Rayfield:CreateWindow({
 })
 
 local MainTab = Window:CreateTab("Main", 4483362458)
+local SABTab
 local NightsTab
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
 task.wait(1)
 
--- **RAYGULL'S ACTUAL 99 NIGHTS ITEMS** [web:13]
+-- **RAYGULL'S 99 NIGHTS ITEMS** [web:13]
 local teleportTargets = {
     "Alien", "Alien Chest", "Alien Shelf", "Alpha Wolf", "Alpha Wolf Pelt", "Anvil Base", "Apple", "Bandage", 
     "Bear", "Berry", "Bolt", "Broken Fan", "Broken Microwave", "Bunny", "Bunny Foot", "Cake", "Carrot", 
@@ -33,7 +34,7 @@ local teleportTargets = {
     "Washing Machine", "Wolf", "Wolf Corpse", "Wolf Pelt"
 }
 
--- GAME DETECTION
+-- **GAME DETECTION**
 local function detectGame()
    local success, result = pcall(function()
       return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
@@ -48,7 +49,7 @@ end
 
 local currentGame = detectGame()
 
--- **SAFE WALKSPD FROM BRAINROT SCRIPT**
+-- **SAFE WALKSPD** [web:12]
 local function safeSetWalkspeed(humanoid, speed)
    local targetSpeed = math.clamp(speed, 16, 50)
    spawn(function()
@@ -63,12 +64,11 @@ local function safeSetWalkspeed(humanoid, speed)
    end)
 end
 
--- **SAFE HITBOX SPACE FROM BRAINROT SCRIPT**
+-- **SAFE HITBOX SPACE** [web:12]
 getgenv().spaceHitboxEnabled = false
 local spaceConnection
 local function toggleSpaceHitbox(Value)
    getgenv().spaceHitboxEnabled = Value
-   
    if Value and player.Character then
       local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
       if rootPart then
@@ -78,7 +78,6 @@ local function toggleSpaceHitbox(Value)
                wait(0.05)
             end
          end)
-         
          spaceConnection = RunService.Heartbeat:Connect(function()
             if player.Character and rootPart.Parent then
                local camera = workspace.CurrentCamera
@@ -91,7 +90,6 @@ local function toggleSpaceHitbox(Value)
       end
    else
       if spaceConnection then spaceConnection:Disconnect() end
-      
       if player.Character then
          local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
          if rootPart then
@@ -106,7 +104,7 @@ local function toggleSpaceHitbox(Value)
    end
 end
 
--- **COMPLETE MAIN TAB FROM BRAINROT SCRIPT**
+-- **COMPLETE MAIN TAB** [web:12]
 MainTab:CreateButton({ 
    Name = "✅ Test GUI", 
    Callback = function() 
@@ -243,20 +241,79 @@ MainTab:CreateSlider({
    end,
 })
 
--- **99 NIGHTS TAB WITH FIXED SCAN**
+-- **SAB TAB - FULLY FUNCTIONAL** [web:12][web:43]
+if currentGame == "SAB" then
+   SABTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
+   
+   SABTab:CreateToggle({
+      Name = "🤖 Auto Collect (Your Base)",
+      CurrentValue = false,
+      Flag = "AutoCollectToggle",
+      Callback = function(Value)
+         getgenv().AutoCollectEnabled = Value
+         if Value then
+            spawn(function()
+               while getgenv().AutoCollectEnabled do
+                  pcall(function()
+                     for _, obj in pairs(workspace:GetDescendants()) do
+                        if (obj.Name:lower():find("collect") or obj.Name:lower():find("drop") or obj.Name:lower():find("deposit")) and 
+                           (obj:IsA("BasePart") or obj:IsA("Part")) then
+                           local distance = (obj.Position - player.Character.Head.Position).Magnitude
+                           if distance < 30 then
+                              local originalPos = player.Character.Head.CFrame
+                              player.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
+                              wait(0.2)
+                              local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
+                              if clickDetector then fireclickdetector(clickDetector) end
+                              wait(0.3)
+                              player.Character.HumanoidRootPart.CFrame = originalPos
+                              break
+                           end
+                        end
+                     end
+                  end)
+                  wait(1)
+               end
+            end)
+         end
+      end,
+   })
+   
+   SABTab:CreateToggle({
+      Name = "🛡️ Anti Ragdoll",
+      CurrentValue = false,
+      Flag = "AntiRagdollToggle",
+      Callback = function(Value)
+         getgenv().AntiRagdoll = Value
+         if player.Character then
+            for _, part in pairs(player.Character:GetChildren()) do
+               if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                  part.CanCollide = Value
+               end
+            end
+         end
+      end,
+   })
+   
+   Rayfield:Notify({
+      Title = "🧠 Steal a Brainrot Detected!",
+      Content = "Auto Collect + Safe Hitbox Space ready!",
+      Duration = 5
+   })
+end
+
+-- **99 NIGHTS TAB** [web:13]
 if currentGame == "99NIGHTS" then
    NightsTab = Window:CreateTab("🌲 99 Nights", 1398837429)
    
    local BringSection = NightsTab:CreateSection("📦 Bring REAL Items")
    
-   -- **RAYGULL PICKABLE FILTER - FIXED SCAN**
    local function isPickableItem(obj)
       if not obj:IsA("BasePart") then return false end
       if obj.Size.Magnitude < 0.3 or obj.Size.Magnitude > 25 then return false end
       if obj.Parent == player.Character then return false end
       
       local name = obj.Name
-      -- **MATCH RAYGULL'S EXACT LIST**
       for _, targetName in pairs(teleportTargets) do
          if name == targetName or name:lower():find(targetName:lower()) or targetName:lower():find(name:lower()) then
             return true
@@ -268,15 +325,12 @@ if currentGame == "99NIGHTS" then
    local function scanPickableItems()
       local foundItems = {}
       local seen = {}
-      
-      -- **SCAN ALL WORKSPACE - WILL FIND ITEMS NOW**
-      for _, obj in pairs(workspace:GetDescendants()) do  -- Changed back to GetDescendants
+      for _, obj in pairs(workspace:GetDescendants()) do
          if isPickableItem(obj) and not seen[obj.Name] then
             seen[obj.Name] = true
             table.insert(foundItems, obj.Name)
          end
       end
-      
       table.sort(foundItems)
       return foundItems
    end
@@ -287,7 +341,7 @@ if currentGame == "99NIGHTS" then
       if #items > 0 then
          Dropdown:Refresh(items, true)
          Dropdown:Set(items[1])
-         Rayfield:Notify({Title = "✅ FOUND ITEMS", Content = #items .. " real items (Carrot, Log, etc.)", Duration = 3})
+         Rayfield:Notify({Title = "✅ FOUND ITEMS", Content = #items .. " real items!", Duration = 3})
       else
          Dropdown:Refresh({"No items found"}, true)
       end
@@ -320,30 +374,6 @@ if currentGame == "99NIGHTS" then
          Rayfield:Notify({Title = "✅ BROUGHT", Content = count .. " " .. selected, Duration = 3})
       end
    })
-   
-   -- QUICK BUTTONS
-   NightsTab:CreateButton({
-      Name = "🍎 Bring Food",
-      Callback = function()
-         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-         if root then
-            local count = 0
-            local foods = {"Carrot", "Apple", "Berry", "Morsel", "Steak"}
-            for _, obj in pairs(workspace:GetDescendants()) do
-               if isPickableItem(obj) then
-                  for _, food in pairs(foods) do
-                     if obj.Name:find(food) then
-                        obj.CFrame = root.CFrame * CFrame.new(2, 2, -4)
-                        count = count + 1
-                        break
-                     end
-                  end
-               end
-            end
-            Rayfield:Notify({Title = "🍎 FOOD", Content = count .. " food!", Duration = 2})
-         end
-      end
-   })
 end
 
-print("🔥 FlareHub V2 - FULL MAIN TAB + FIXED 99 NIGHTS!")
+print("🔥 FlareHub V2 - SAB + 99 NIGHTS FULLY LOADED!")
