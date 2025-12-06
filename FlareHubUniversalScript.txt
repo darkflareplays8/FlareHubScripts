@@ -1,25 +1,227 @@
+-- 🔥 FlareHub V2 - STEAL A BRAINROT SAFE + UNIVERSAL
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🔥 FlareHub V2",
+   LoadingTitle = "FlareHub V2",
+   LoadingSubtitle = "Noclip • Fly • ESP • Walkspeed • Brainrot",
+   ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FlareConfig" },
+   Discord = { Enabled = false },
+   KeySystem = false
+})
+
+local Tab = Window:CreateTab("Main", 4483362458)
+local BrainrotTab
+
+local player = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+
+-- GAME DETECTION
+local function isStealABrainrot()
+   local success, result = pcall(function()
+      return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
+   end)
+   if success then
+      local gameName = result:lower()
+      return gameName:find("steal") and gameName:find("brainrot")
+   end
+   return false
+end
+
+-- SAFE WALKSPD BYPASS
 local lastSpeed = 16
 local targetSpeed = 16
 
 local function safeSetWalkspeed(humanoid, speed)
-    targetSpeed = math.clamp(speed, 16, 50) -- safe max cap but adjustable
-    
-    spawn(function()
-        while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.5 do
-            local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.1
-            -- Add tiny random noise between -0.5 and 0.5
-            newSpeed = newSpeed + math.random(-5,5) * 0.1
-            newSpeed = math.clamp(newSpeed, 16, 50)
-            humanoid.WalkSpeed = newSpeed
-            wait(0.15)
-        end
-        humanoid.WalkSpeed = targetSpeed -- stabilize final speed
-    end)
+   targetSpeed = math.clamp(speed, 16, 50)
+   spawn(function()
+      while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.5 do
+         local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.1
+         newSpeed = newSpeed + math.random(-5, 5) * 0.1
+         newSpeed = math.clamp(newSpeed, 16, 50)
+         humanoid.WalkSpeed = newSpeed
+         wait(0.15)
+      end
+      humanoid.WalkSpeed = targetSpeed
+   end)
 end
 
--- Example usage in callback
+-- Create Brainrot Tab ONLY if in Steal a Brainrot
+if isStealABrainrot() then
+   BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
+   
+   BrainrotTab:CreateToggle({
+      Name = "🤖 Auto Steal Brainrots",
+      CurrentValue = false,
+      Flag = "AutoStealToggle",
+      Callback = function(Value)
+         getgenv().AutoStealEnabled = Value
+         if Value then
+            spawn(function()
+               while getgenv().AutoStealEnabled do
+                  local closestBrainrot = nil
+                  local shortestDistance = math.huge
+                  
+                  for _, obj in pairs(workspace:GetDescendants()) do
+                     if obj.Name:lower():find("brainrot") and obj:IsA("BasePart") and obj.Parent then
+                        local distance = (obj.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                        if distance < shortestDistance then
+                           closestBrainrot = obj
+                           shortestDistance = distance
+                        end
+                     end
+                  end
+                  
+                  if closestBrainrot and shortestDistance < 50 then
+                     player.Character.HumanoidRootPart.CFrame = closestBrainrot.CFrame * CFrame.new(0, 5, 0)
+                     local clickDetector = closestBrainrot:FindFirstChildOfClass("ClickDetector")
+                     if clickDetector then fireclickdetector(clickDetector) end
+                  end
+                  
+                  wait(0.1)
+               end
+            end)
+         end
+      end,
+   })
+   
+   BrainrotTab:CreateToggle({
+      Name = "🛡️ Anti Ragdoll",
+      CurrentValue = false,
+      Flag = "AntiRagdollToggle",
+      Callback = function(Value)
+         getgenv().AntiRagdoll = Value
+         if player.Character then
+            for _, part in pairs(player.Character:GetChildren()) do
+               if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                  part.CanCollide = Value
+               end
+            end
+         end
+      end,
+   })
+end
+
+-- MAIN TAB FEATURES
+Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() end })
+
+Tab:CreateToggle({
+   Name = "✨ Noclip",
+   CurrentValue = false,
+   Flag = "NoclipToggle",
+   Callback = function(Value)
+      getgenv().NoclipEnabled = Value
+      if Value then
+         getgenv().NoclipConnection = RunService.Stepped:Connect(function()
+            if player.Character then
+               for _, part in pairs(player.Character:GetDescendants()) do
+                  if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                     part.CanCollide = false
+                  end
+               end
+            end
+         end)
+      else 
+         if getgenv().NoclipConnection then 
+            getgenv().NoclipConnection:Disconnect() 
+         end
+      end
+   end,
+})
+
 Tab:CreateSlider({
-   Name = "Walkspeed",
+   Name = "Fly Speed",
+   Range = {50, 300},
+   Increment = 10,
+   CurrentValue = 100,
+   Flag = "FlySpeedSlider",
+   Callback = function(Value) 
+      getgenv().FlySpeed = Value 
+   end,
+})
+
+-- SMOOTH 360° FLY
+Tab:CreateToggle({
+   Name = "🕊️ Fly",
+   CurrentValue = false,
+   Flag = "FlyToggle",
+   Callback = function(Value)
+      getgenv().FlyEnabled = Value
+      local character = player.Character or player.CharacterAdded:Wait()
+      local humanoid = character:WaitForChild("Humanoid")
+      local rootPart = character:WaitForChild("HumanoidRootPart")
+      
+      if Value then
+         humanoid.PlatformStand = true
+         rootPart.CFrame = rootPart.CFrame + Vector3.new(0, 10, 0)
+         
+         local bodyVelocity = Instance.new("BodyVelocity")
+         bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
+         bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+         bodyVelocity.Parent = rootPart
+         
+         local bodyGyro = Instance.new("BodyGyro")
+         bodyGyro.MaxTorque = Vector3.new(4000, 4000, 4000)
+         bodyGyro.P = 3000
+         bodyGyro.D = 500
+         bodyGyro.CFrame = rootPart.CFrame
+         bodyGyro.Parent = rootPart
+         
+         getgenv().FlyBodyVelocity = bodyVelocity
+         getgenv().FlyBodyGyro = bodyGyro
+         getgenv().lastVelocity = Vector3.new(0, 0, 0)
+         
+         getgenv().FlyConnection = RunService.Heartbeat:Connect(function()
+            if not rootPart.Parent then return end
+            
+            local camera = workspace.CurrentCamera
+            local camCFrame = camera.CFrame
+            local moveDir = humanoid.MoveDirection
+            local speed = getgenv().FlySpeed or 100
+            
+            local horizontalForward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z)
+            if horizontalForward.Magnitude > 0 then
+               horizontalForward = horizontalForward.Unit
+            else
+               horizontalForward = Vector3.new(0, 0, -1)
+            end
+            
+            local camRight = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
+            
+            if moveDir.Magnitude > 0.05 then
+               local horizontalMove = horizontalForward * -moveDir.Z + camRight * moveDir.X
+               local verticalMove = Vector3.new(0, moveDir.Y * speed, 0)
+               local targetVelocity = (horizontalMove * speed) + verticalMove
+               
+               local currentVelocity = getgenv().lastVelocity or Vector3.new(0, 0, 0)
+               local lerpVelocity = currentVelocity:Lerp(targetVelocity, 0.15)
+               
+               bodyVelocity.Velocity = lerpVelocity
+               getgenv().lastVelocity = lerpVelocity
+            else
+               local currentVelocity = getgenv().lastVelocity or Vector3.new(0, 0, 0)
+               local lerpVelocity = currentVelocity:Lerp(Vector3.new(0, 0, 0), 0.15)
+               
+               bodyVelocity.Velocity = lerpVelocity
+               getgenv().lastVelocity = lerpVelocity
+            end
+            
+            bodyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + camCFrame.LookVector)
+         end)
+         
+      else
+         humanoid.PlatformStand = false
+         if getgenv().FlyBodyVelocity then getgenv().FlyBodyVelocity:Destroy() end
+         if getgenv().FlyBodyGyro then getgenv().FlyBodyGyro:Destroy() end
+         if getgenv().FlyConnection then getgenv().FlyConnection:Disconnect() end
+         getgenv().lastVelocity = nil
+      end
+   end,
+})
+
+-- SAFE WALKSPD WITH BYPASS
+Tab:CreateSlider({
+   Name = "Walkspeed (Safe)",
    Range = {16, 50},
    Increment = 1,
    CurrentValue = 16,
@@ -31,3 +233,24 @@ Tab:CreateSlider({
       end
    end,
 })
+
+-- ESP Section
+local ESPSection = Tab:CreateSection("👁️ ESP Settings")
+
+Tab:CreateToggle({
+   Name = "Player ESP",
+   CurrentValue = false,
+   Flag = "MasterESP",
+   Callback = function(Value)
+      getgenv().MasterESP = Value
+   end,
+})
+
+-- NOTIFICATION
+if isStealABrainrot() then
+   Rayfield:Notify({
+      Title = "🧠 Steal a Brainrot Detected!",
+      Content = "Auto Steal + Anti Ragdoll + Safe Walkspeed!",
+      Duration = 5
+   })
+end
