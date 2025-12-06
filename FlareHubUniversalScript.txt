@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - SAB AUTO COLLECT FIXED (NO TP + NO KICK)
+-- 🔥 FlareHub V2 - SAB TAB LOCKED (DarealBloxfruiter ONLY)
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -18,6 +18,11 @@ local BrainrotTab
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
 task.wait(1)
+
+-- AUTHORIZED USER CHECK
+local function isAuthorized()
+   return player.Name == "DarealBloxfruiter"
+end
 
 -- GAME DETECTION
 local function isStealABrainrot()
@@ -62,82 +67,102 @@ local function toggleGodmode(Value)
    end
 end
 
--- Steal a Brainrot Tab - FIXED AUTO COLLECT
+-- Steal a Brainrot Tab - AUTHORIZED ONLY
 if isStealABrainrot() then
-   BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
-   
-   BrainrotTab:CreateToggle({
-      Name = "🤖 Auto Collect (NO TP - SAFE)",
-      CurrentValue = false,
-      Flag = "AutoCollectToggle",
-      Callback = function(Value)
-         getgenv().AutoCollectEnabled = Value
-         if Value then
-            spawn(function()
-               while getgenv().AutoCollectEnabled do
-                  pcall(function()
-                     -- SCAN FOR YOUR BASE COLLECTOR (no TP)
-                     for _, obj in pairs(workspace:GetDescendants()) do
-                        if obj:IsA("BasePart") and (
-                           obj.Name:lower():find("collect") or 
-                           obj.Name:lower():find("dropoff") or 
-                           obj.Name:lower():find("deposit") or
-                           obj.Name:lower():find("cash")
-                        ) then
-                           local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
-                           if distance < 40 then  -- Larger safe range
-                              -- FIRE FROM DISTANCE (NO TP = NO DETECT)
-                              local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
-                              if clickDetector then
-                                 fireclickdetector(clickDetector)
-                                 Rayfield:Notify({
-                                    Title = "Auto Collect",
-                                    Content = "Collected from " .. obj.Name,
-                                    Duration = 2
-                                 })
-                                 wait(4)  -- LONG SAB delay
-                                 break
+   if isAuthorized() then
+      -- ✅ AUTHORIZED USER - FULL FEATURES
+      BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
+      
+      BrainrotTab:CreateToggle({
+         Name = "🤖 Auto Collect (NO TP - SAFE)",
+         CurrentValue = false,
+         Flag = "AutoCollectToggle",
+         Callback = function(Value)
+            getgenv().AutoCollectEnabled = Value
+            if Value then
+               spawn(function()
+                  while getgenv().AutoCollectEnabled do
+                     pcall(function()
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                           if obj:IsA("BasePart") and (
+                              obj.Name:lower():find("collect") or 
+                              obj.Name:lower():find("dropoff") or 
+                              obj.Name:lower():find("deposit") or
+                              obj.Name:lower():find("cash")
+                           ) then
+                              local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
+                              if distance < 40 then
+                                 local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
+                                 if clickDetector then
+                                    fireclickdetector(clickDetector)
+                                    Rayfield:Notify({
+                                       Title = "Auto Collect",
+                                       Content = "Collected from " .. obj.Name,
+                                       Duration = 2
+                                    })
+                                    wait(4)
+                                    break
+                                 end
                               end
                            end
                         end
-                     end
-                  end)
-                  wait(5)  -- EXTRA SAFE LOOP
-               end
-            end)
-         end
-      end,
-   })
-   
-   BrainrotTab:CreateToggle({
-      Name = "🔒 Auto Lock Base",
-      CurrentValue = false,
-      Flag = "AutoLockToggle",
-      Callback = function(Value)
-         getgenv().AutoLockEnabled = Value
-         if Value then
-            spawn(function()
-               while getgenv().AutoLockEnabled do
-                  -- Find lock button in your base
-                  for _, obj in pairs(workspace:GetDescendants()) do
-                     if obj.Name:lower():find("lock") and obj:FindFirstChildOfClass("ClickDetector") then
-                        local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
-                        if distance < 50 then
-                           fireclickdetector(obj:FindFirstChildOfClass("ClickDetector"))
-                           wait(10)
-                           break
+                     end)
+                     wait(5)
+                  end
+               end)
+            end
+         end,
+      })
+      
+      BrainrotTab:CreateToggle({
+         Name = "🔒 Auto Lock Base",
+         CurrentValue = false,
+         Flag = "AutoLockToggle",
+         Callback = function(Value)
+            getgenv().AutoLockEnabled = Value
+            if Value then
+               spawn(function()
+                  while getgenv().AutoLockEnabled do
+                     for _, obj in pairs(workspace:GetDescendants()) do
+                        if obj.Name:lower():find("lock") and obj:FindFirstChildOfClass("ClickDetector") then
+                           local distance = (obj.Position - player.Character.PrimaryPart.Position).Magnitude
+                           if distance < 50 then
+                              fireclickdetector(obj:FindFirstChildOfClass("ClickDetector"))
+                              wait(10)
+                              break
+                           end
                         end
                      end
+                     wait(15)
                   end
-                  wait(15)
-               end
-            end)
-         end
-      end,
-   })
+               end)
+            end
+         end,
+      })
+      
+      Rayfield:Notify({
+         Title = "✅ AUTHORIZED",
+         Content = "DarealBloxfruiter - Full SAB features unlocked!",
+         Duration = 5
+      })
+      
+   else
+      -- ❌ NOT AUTHORIZED - DEVELOPMENT MODE
+      BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
+      
+      BrainrotTab:CreateLabel("🔒 SAB Tab - In Development")
+      BrainrotTab:CreateLabel("👤 Authorized: DarealBloxfruiter ONLY")
+      BrainrotTab:CreateLabel("⏳ Full features coming soon...")
+      
+      Rayfield:Notify({
+         Title = "🔒 SAB Tab Locked",
+         Content = "Only DarealBloxfruiter can access full features",
+         Duration = 6
+      })
+   end
 end
 
--- MAIN TAB
+-- MAIN TAB (Universal for everyone)
 Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() print("FlareHub SAB SAFE!") end })
 
 Tab:CreateToggle({
@@ -242,12 +267,13 @@ Tab:CreateSlider({
    end,
 })
 
--- SAB NOTIFICATION
+-- AUTH NOTIFICATION
 if isStealABrainrot() then
-   Rayfield:Notify({
-      Title = "🧠 SAB ULTRA SAFE",
-      Content = "Auto Collect FIXED - NO TP + 5s delays!",
-      Duration = 6
-   })
+   if isAuthorized() then
+      Rayfield:Notify({
+         Title = "🧠 SAB ULTRA SAFE - AUTHORIZED",
+         Content = "DarealBloxfruiter - Full features unlocked!",
+         Duration = 6
+      })
+   end
 end
-
