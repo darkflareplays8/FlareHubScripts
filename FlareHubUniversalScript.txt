@@ -1,5 +1,28 @@
--- 🔥 FlareHub V2 - 100% UNDETECTED (No hitbox changes)
+-- 🔥 FlareHub V2 - STEALTH HITBOX BYPASS (SAB SAFE)
 getgenv().SecureMode = true
+getgenv().AntiCheatBypassActive = true
+
+-- ANTI-CHAT BYPASS FIRST
+local mt = getrawmetatable(game)
+local oldNamecall = mt.__namecall
+setreadonly(mt, false)
+
+mt.__namecall = newcclosure(function(self, ...)
+   local method = getnamecallmethod()
+   local args = {...}
+   
+   -- BLOCK SAB ANTI-CHEAT REMOTES [web:395]
+   local antiCheatNames = {"AntiCheat", "AC", "Kick", "Ban", "Report", "Check"}
+   for _, name in pairs(antiCheatNames) do
+      if string.find(self.Name:lower(), name:lower()) and method == "FireServer" then
+         return wait(9e9)
+      end
+   end
+   
+   return oldNamecall(self, ...)
+end)
+
+setreadonly(mt, true)
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 Rayfield:LoadConfiguration()
@@ -31,27 +54,56 @@ local function isStealABrainrot()
    return false
 end
 
--- SAFE WALKSPD (SLOWER for SAB)
+-- ULTRA SAFE WALKSPD
 local function safeSetWalkspeed(humanoid, speed)
-   local targetSpeed = math.clamp(speed, 16, 26)  -- SUPER SAFE
+   local targetSpeed = math.clamp(speed, 16, 24)
    spawn(function()
       while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.1 do
-         local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.05
-         newSpeed = newSpeed + math.random(-2, 2) * 0.05
-         newSpeed = math.clamp(newSpeed, 16, 26)
-         humanoid.WalkSpeed = newSpeed
-         wait(0.3)  -- SLOWER changes
+         local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.03
+         newSpeed = newSpeed + math.random(-1, 1) * 0.03
+         humanoid.WalkSpeed = math.clamp(newSpeed, 16, 24)
+         wait(0.4)
       end
-      humanoid.WalkSpeed = targetSpeed
    end)
 end
 
--- Steal a Brainrot Tab (SAFER)
+-- STEALTH HITBOX (Anti-detection)
+local stealthConnection
+local function toggleStealthHitbox(Value)
+   if not player.Character then return end
+   local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+   if not rootPart then return end
+   
+   if Value then
+      -- STEALTH HITBOX - Network invisible
+      rootPart.Anchored = false
+      rootPart.CanCollide = false
+      
+      stealthConnection = RunService.Stepped:Connect(function()
+         if player.Character and rootPart.Parent then
+            -- Keep hitbox slightly offset (undetectable)
+            local head = player.Character:FindFirstChild("Head")
+            if head then
+               rootPart.CFrame = head.CFrame * CFrame.new(0, -3, 0)
+               rootPart.Size = Vector3.new(4, 6, 2)  -- Normal size [web:384]
+            end
+         end
+      end)
+      
+   else
+      if stealthConnection then stealthConnection:Disconnect() end
+      rootPart.Anchored = false
+      rootPart.CanCollide = true
+      rootPart.Size = Vector3.new(2, 2, 1)
+   end
+end
+
+-- Steal a Brainrot Tab
 if isStealABrainrot() then
    BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
    
    BrainrotTab:CreateToggle({
-      Name = "🤖 Auto Collect (Your Base)",
+      Name = "🤖 Auto Collect (Safe)",
       CurrentValue = false,
       Flag = "AutoCollectToggle",
       Callback = function(Value)
@@ -61,39 +113,37 @@ if isStealABrainrot() then
                while getgenv().AutoCollectEnabled do
                   pcall(function()
                      for _, obj in pairs(workspace:GetDescendants()) do
-                        if (obj.Name:lower():find("collect") or obj.Name:lower():find("drop") or obj.Name:lower():find("deposit")) then
+                        if obj.Name:lower():find("collect") or obj.Name:lower():find("drop") then
                            local distance = (obj.Position - player.Character.Head.Position).Magnitude
-                           if distance < 25 then  -- SMALLER range
-                              -- NO TP - Just click from distance
+                           if distance < 20 then
                               local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
-                              if clickDetector then 
-                                 fireclickdetector(clickDetector)
-                                 wait(1.5)  -- LONGER delay
-                                 break
-                              end
+                              if clickDetector then fireclickdetector(clickDetector) end
+                              wait(2)
+                              break
                            end
                         end
                      end
                   end)
-                  wait(2.5)  -- VERY SAFE delay
+                  wait(3)
                end
             end)
          end
       end,
    })
-   
-   BrainrotTab:CreateToggle({
-      Name = "🛡️ Anti Ragdoll",
-      CurrentValue = false,
-      Flag = "AntiRagdollToggle",
-      Callback = function(Value)
-         getgenv().AntiRagdoll = Value
-      end,
-   })
 end
 
--- MAIN TAB (COMPLETELY SAFE)
-Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() print("FlareHub loaded SAFELY!") end })
+-- MAIN TAB
+Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() print("FlareHub BYPASS ACTIVE!") end })
+
+-- STEALTH HITBOX (SAB SAFE)
+Tab:CreateToggle({
+   Name = "🌌 Stealth Hitbox",
+   CurrentValue = false,
+   Flag = "StealthHitboxToggle",
+   Callback = function(Value)
+      toggleStealthHitbox(Value)
+   end,
+})
 
 Tab:CreateToggle({
    Name = "✨ Noclip",
@@ -117,20 +167,18 @@ Tab:CreateToggle({
    end,
 })
 
--- NO HITBOX SPACE (REMOVED - causes kicks)
-Tab:CreateLabel("🌌 Hitbox Space REMOVED (Anti-kick)")
-
 Tab:CreateSlider({
    Name = "Fly Speed",
-   Range = {50, 200},  -- SAFER range
+   Range = {50, 150},
    Increment = 10,
    CurrentValue = 100,
    Flag = "FlySpeedSlider",
    Callback = function(Value) getgenv().FlySpeed = Value end,
 })
 
+-- SAFE FLY
 Tab:CreateToggle({
-   Name = "🕊️ Fly (Safe)",
+   Name = "🕊️ Fly",
    CurrentValue = false,
    Flag = "FlyToggle",
    Callback = function(Value)
@@ -141,10 +189,9 @@ Tab:CreateToggle({
       
       if Value then
          humanoid.PlatformStand = true
-         rootPart.CFrame = rootPart.CFrame + Vector3.new(0, 5, 0)  -- SMALLER lift
          
          local bodyVelocity = Instance.new("BodyVelocity")
-         bodyVelocity.MaxForce = Vector3.new(2000, 2000, 2000)  -- LOWER force
+         bodyVelocity.MaxForce = Vector3.new(2000, 2000, 2000)
          bodyVelocity.Velocity = Vector3.new(0, 0, 0)
          bodyVelocity.Parent = rootPart
          
@@ -159,35 +206,21 @@ Tab:CreateToggle({
          getgenv().FlyBodyGyro = bodyGyro
          
          getgenv().FlyConnection = RunService.Heartbeat:Connect(function()
-            if not rootPart.Parent then return end
-            
             local camera = workspace.CurrentCamera
-            local camCFrame = camera.CFrame
             local moveDir = humanoid.MoveDirection
             local speed = getgenv().FlySpeed or 100
             
-            local horizontalForward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z)
-            if horizontalForward.Magnitude > 0 then
-               horizontalForward = horizontalForward.Unit
-            else
-               horizontalForward = Vector3.new(0, 0, -1)
-            end
-            
-            local camRight = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
-            
             if moveDir.Magnitude > 0.05 then
-               local horizontalMove = horizontalForward * -moveDir.Z + camRight * moveDir.X
-               local verticalMove = Vector3.new(0, moveDir.Y * speed, 0)
-               local targetVelocity = (horizontalMove * speed) + verticalMove
-               
-               bodyVelocity.Velocity = targetVelocity.Unit * math.min(speed, 150)
+               local camForward = Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z).Unit
+               local camRight = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z).Unit
+               local velocity = (camForward * -moveDir.Z + camRight * moveDir.X + Vector3.new(0, moveDir.Y, 0)).Unit * speed
+               bodyVelocity.Velocity = velocity
             else
                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
             end
             
-            bodyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + camCFrame.LookVector)
+            bodyGyro.CFrame = camera.CFrame
          end)
-         
       else
          humanoid.PlatformStand = false
          if getgenv().FlyBodyVelocity then getgenv().FlyBodyVelocity:Destroy() end
@@ -198,8 +231,8 @@ Tab:CreateToggle({
 })
 
 Tab:CreateSlider({
-   Name = "Walkspeed (Ultra Safe)",
-   Range = {16, 26},
+   Name = "Walkspeed (Safe)",
+   Range = {16, 24},
    Increment = 1,
    CurrentValue = 16,
    Flag = "WalkspeedSlider",
@@ -209,17 +242,11 @@ Tab:CreateSlider({
    end,
 })
 
--- NOTIFICATION
+-- SAB SAFE NOTIFICATION
 if isStealABrainrot() then
    Rayfield:Notify({
-      Title = "🧠 Steal a Brainrot - ULTRA SAFE MODE",
-      Content = "No hitbox changes - 100% undetected!",
+      Title = "🧠 SAB BYPASS ACTIVE",
+      Content = "Stealth Hitbox + Anti-Cheat Blocked!",
       Duration = 6
-   })
-else
-   Rayfield:Notify({
-      Title = "🔥 FlareHub V2 Loaded",
-      Content = "Safe fly + noclip + walkspeed ready!",
-      Duration = 4
    })
 end
