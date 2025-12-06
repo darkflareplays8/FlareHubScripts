@@ -72,9 +72,10 @@ local function toggleGodmode(Value)
    end
 end
 
--- 🎮 MAIN TAB - UNIVERSAL FEATURES
+-- 🎮 MAIN TAB CONTENT (from your original script)
 local MovementSection = MainTab:CreateSection("🏃 Movement")
-local NoclipToggle = MainTab:CreateToggle({
+
+MainTab:CreateToggle({
    Name = "Noclip",
    CurrentValue = false,
    Flag = "NoclipMain",
@@ -87,7 +88,7 @@ local NoclipToggle = MainTab:CreateToggle({
    end
 })
 
-local WalkspeedSlider = MainTab:CreateSlider({
+MainTab:CreateSlider({
    Name = "Walkspeed",
    Range = {16, 50},
    Increment = 1,
@@ -100,13 +101,11 @@ local WalkspeedSlider = MainTab:CreateSlider({
    end
 })
 
-local FlyToggle = MainTab:CreateToggle({
-   Name = "Fly",
+MainTab:CreateToggle({
+   Name = "Godmode",
    CurrentValue = false,
-   Flag = "FlyMain",
-   Callback = function(Value)
-      -- Fly implementation here (same as previous)
-   end
+   Flag = "GodmodeMain",
+   Callback = toggleGodmode
 })
 
 -- 🌲 99 NIGHTS TAB - GAME SPECIFIC
@@ -115,20 +114,15 @@ if currentGame == "99NIGHTS" then
    
    local BringSection = NightsTab:CreateSection("📦 Bring Items")
    
-   -- SIMPLIFIED 99 NIGHTS ITEM FILTER - ONLY BASIC PICKUPS
+   -- BETTER 99 NIGHTS PICKUP FILTER
    local function isPickupItem(obj)
       if not obj:IsA("BasePart") or obj.Size.Magnitude < 0.5 then return false end
       if obj.Parent == player.Character then return false end
       
       local name = obj.Name:lower()
-      -- ONLY COMMON PICKUP ITEMS
-      local goodItems = {
-         "wood", "log", "coal", "morsel", "bandage", "apple", "berry", "carrot", 
-         "diamond", "scrap", "metal", "seed"
-      }
+      local goodItems = {"wood", "log", "coal", "morsel", "bandage", "apple", "berry", "carrot", "diamond", "scrap", "metal", "seed"}
+      local badItems = {"particle", "effect", "scrapper", "light", "fire", "smoke", "debris", "chunk"}
       
-      -- BLOCK JUNK
-      local badItems = {"particle", "effect", "scrapper", "light", "fire", "smoke", "debris"}
       for _, bad in pairs(badItems) do
          if name:find(bad) then return false end
       end
@@ -143,14 +137,12 @@ if currentGame == "99NIGHTS" then
    local function scanPickupItems()
       local items = {}
       local seen = {}
-      
-      for _, obj in pairs(workspace:GetChildren()) do  -- Only direct workspace children
+      for _, obj in pairs(workspace:GetChildren()) do
          if isPickupItem(obj) and not seen[obj.Name] then
             seen[obj.Name] = true
             table.insert(items, obj.Name)
          end
       end
-      
       table.sort(items)
       return items
    end
@@ -170,49 +162,108 @@ if currentGame == "99NIGHTS" then
       Name = "🔍 Scan Items",
       Callback = function()
          updateDropdown()
-         Rayfield:Notify({Title = "Scan", Content = #scanPickupItems() .. " items found!", Duration = 2})
+         Rayfield:Notify({Title = "Scan", Content = #scanPickupItems() .. " items!", Duration = 2})
       end
    })
    
    Dropdown = NightsTab:CreateDropdown({
-      Name = "🎯 Bring",
+      Name = "🎯 Bring Item",
       Options = {"Scan first"},
-      CurrentOption = "None",
+      CurrentValue = {"Scan first"},
       Flag = "Bring99Nights",
       Callback = function(Option)
-         if Option == "Scan first" or Option == "No items" then return end
+         if Option[1] == "Scan first" or Option[1] == "No items" then return end
          
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if not root then return end
          
          local count = 0
          for _, obj in pairs(workspace:GetChildren()) do
-            if isPickupItem(obj) and obj.Name == Option then
+            if isPickupItem(obj) and obj.Name == Option[1] then
                obj.CFrame = root.CFrame * CFrame.new(0, 3, -5)
                count = count + 1
             end
          end
-         Rayfield:Notify({Title = "Done", Content = count .. " " .. Option, Duration = 2})
+         Rayfield:Notify({Title = "Done", Content = count .. " " .. Option[1], Duration = 2})
       end
    })
    
-   -- Quick buttons
+   -- ORIGINAL QUICK BUTTONS
    NightsTab:CreateButton({
-      Name = "🌲 Wood",
+      Name = "📦 Bring All Wood",
       Callback = function()
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if root then
             local count = 0
-            for _, obj in pairs(workspace:GetChildren()) do
-               if isPickupItem(obj) and obj.Name:lower():find("wood") then
-                  obj.CFrame = root.CFrame * CFrame.new(0, 3, -5)
+            for _, item in pairs(workspace:GetDescendants()) do
+               if item:IsA("BasePart") and item.Name:lower():find("wood") then
+                  item.CFrame = root.CFrame * CFrame.new(0, 0, -3)
                   count = count + 1
                end
             end
-            Rayfield:Notify({Title = "Wood", Content = count .. " brought", Duration = 2})
+            Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " wood!", Duration = 3})
          end
-      end
+      end,
+   })
+   
+   NightsTab:CreateButton({
+      Name = "🍎 Bring All Food",
+      Callback = function()
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if root then
+            local count = 0
+            for _, item in pairs(workspace:GetDescendants()) do
+               if item:IsA("BasePart") and item.Name:lower():find("food") then
+                  item.CFrame = root.CFrame * CFrame.new(2, 0, -3)
+                  count = count + 1
+               end
+            end
+            Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " food!", Duration = 3})
+         end
+      end,
+   })
+   
+   NightsTab:CreateButton({
+      Name = "💎 Bring All Diamonds",
+      Callback = function()
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if root then
+            local count = 0
+            for _, item in pairs(workspace:GetDescendants()) do
+               if item:IsA("BasePart") and item.Name:lower():find("diamond") then
+                  item.CFrame = root.CFrame * CFrame.new(-2, 0, -3)
+                  count = count + 1
+               end
+            end
+            Rayfield:Notify({Title = "Bring", Content = "Brought " .. count .. " diamonds!", Duration = 3})
+         end
+      end,
+   })
+
+   local TeleportSection = NightsTab:CreateSection("🚀 Teleport")
+   NightsTab:CreateButton({
+      Name = "🏕️ TP to Base",
+      Callback = function()
+         for _, base in pairs(workspace:GetDescendants()) do
+            if base.Name:lower():find("base") and base:IsA("BasePart") then
+               player.Character.HumanoidRootPart.CFrame = base.CFrame + Vector3.new(0, 5, 0)
+               break
+            end
+         end
+      end,
+   })
+   NightsTab:CreateButton({
+      Name = "🌳 TP to Trees",
+      Callback = function()
+         for _, tree in pairs(workspace:GetDescendants()) do
+            if tree.Name:lower():find("tree") and tree:IsA("BasePart") then
+               player.Character.HumanoidRootPart.CFrame = tree.CFrame + Vector3.new(0, 5, 0)
+               break
+            end
+         end
+         Rayfield:Notify({Title = "Teleport", Content = "Teleported to trees!", Duration = 2})
+      end,
    })
 end
 
-print("🔥 FlareHub V2 loaded - Main tab restored!")
+print("🔥 FlareHub V2 loaded successfully!")
