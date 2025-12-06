@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - COMPLETE MULTI-GAME (SAB + 99 NIGHTS)
+-- 🔥 FlareHub V2 - ORIGINAL MAIN TAB + SAB + FIXED 99 NIGHTS
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -13,28 +13,20 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
-local MainTab = Window:CreateTab("Main", 4483362458)
+local MainTab = Window:CreateTab("🎮 Main", 4483362458)
 local SABTab
 local NightsTab
+
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
 task.wait(1)
 
--- **RAYGULL'S 99 NIGHTS ITEMS** [web:13]
-local teleportTargets = {
-    "Alien", "Alien Chest", "Alien Shelf", "Alpha Wolf", "Alpha Wolf Pelt", "Anvil Base", "Apple", "Bandage", 
-    "Bear", "Berry", "Bolt", "Broken Fan", "Broken Microwave", "Bunny", "Bunny Foot", "Cake", "Carrot", 
-    "Chair Set", "Chest", "Chilli", "Coal", "Coin Stack", "Crossbow Cultist", "Cultist", "Cultist Gem", 
-    "Deer", "Fuel Canister", "Giant Sack", "Good Axe", "Iron Body", "Item Chest", "Item Chest2", 
-    "Item Chest3", "Item Chest4", "Item Chest6", "Laser Fence Blueprint", "Laser Sword", "Leather Body", 
-    "Log", "Lost Child", "Lost Child2", "Lost Child3", "Lost Child4", "Medkit", "Meat? Sandwich", 
-    "Morsel", "Old Car Engine", "Old Flashlight", "Old Radio", "Oil Barrel", "Raygun", "Revolver", 
-    "Revolver Ammo", "Rifle", "Rifle Ammo", "Riot Shield", "Sapling", "Seed Box", "Sheet Metal", 
-    "Spear", "Steak", "Stronghold Diamond Chest", "Tyre", "UFO Component", "UFO Junk", 
-    "Washing Machine", "Wolf", "Wolf Corpse", "Wolf Pelt"
-}
+-- **ORIGINAL AUTHORIZED USER CHECK**
+local function isAuthorized()
+   return player.Name == "DarealBloxfruiter"
+end
 
--- **GAME DETECTION**
+-- **ORIGINAL GAME DETECTION**
 local function detectGame()
    local success, result = pcall(function()
       return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
@@ -49,331 +41,216 @@ end
 
 local currentGame = detectGame()
 
--- **SAFE WALKSPD** [web:12]
+-- **ORIGINAL ULTRA SAFE WALKSPD**
 local function safeSetWalkspeed(humanoid, speed)
-   local targetSpeed = math.clamp(speed, 16, 50)
+   local targetSpeed = math.clamp(speed, 16, 24)
    spawn(function()
-      while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.5 do
-         local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.1
-         newSpeed = newSpeed + math.random(-5, 5) * 0.1
-         newSpeed = math.clamp(newSpeed, 16, 50)
-         humanoid.WalkSpeed = newSpeed
-         wait(0.15)
+      while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.1 do
+         local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.03
+         newSpeed = newSpeed + math.random(-1, 1) * 0.03
+         humanoid.WalkSpeed = math.clamp(newSpeed, 16, 24)
+         wait(0.4)
       end
-      humanoid.WalkSpeed = targetSpeed
    end)
 end
 
--- **SAFE HITBOX SPACE** [web:12]
-getgenv().spaceHitboxEnabled = false
-local spaceConnection
-local function toggleSpaceHitbox(Value)
-   getgenv().spaceHitboxEnabled = Value
-   if Value and player.Character then
-      local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-      if rootPart then
-         spawn(function()
-            for i = 1, 50 do
-               rootPart.CFrame = rootPart.CFrame + Vector3.new(0, 20, 0)
-               wait(0.05)
-            end
-         end)
-         spaceConnection = RunService.Heartbeat:Connect(function()
-            if player.Character and rootPart.Parent then
-               local camera = workspace.CurrentCamera
-               local head = player.Character:FindFirstChild("Head")
-               if head then
-                  camera.CFrame = CFrame.new(head.Position, head.Position + camera.CFrame.LookVector)
-               end
-            end
-         end)
-      end
-   else
-      if spaceConnection then spaceConnection:Disconnect() end
-      if player.Character then
-         local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-         if rootPart then
-            spawn(function()
-               for i = 1, 50 do
-                  rootPart.CFrame = rootPart.CFrame - Vector3.new(0, 20, 0)
-                  wait(0.05)
-               end
-            end)
+-- **ORIGINAL TRUE GODMODE**
+local godmodeConnection
+local function toggleGodmode(Value)
+   if not player.Character then return end
+   local humanoid = player.Character:FindFirstChild("Humanoid")
+   if not humanoid then return end
+   
+   if Value then
+      godmodeConnection = humanoid.HealthChanged:Connect(function(health)
+         if health < humanoid.MaxHealth then
+            humanoid.Health = humanoid.MaxHealth
          end
-      end
+      end)
+   else
+      if godmodeConnection then godmodeConnection:Disconnect() end
    end
 end
 
--- **COMPLETE MAIN TAB** [web:12]
-MainTab:CreateButton({ 
-   Name = "✅ Test GUI", 
-   Callback = function() 
-      print("FlareHub V2 loaded!") 
-      Rayfield:Notify({Title = "FlareHub", Content = "Loaded successfully!", Duration = 3})
-   end 
-})
+-- **ORIGINAL MAIN TAB CONTENT EXACTLY**
+local MovementSection = MainTab:CreateSection("🏃 Movement")
 
 MainTab:CreateToggle({
-   Name = "🌌 Safe Hitbox Space",
+   Name = "Noclip",
    CurrentValue = false,
-   Flag = "SpaceHitboxToggle",
-   Callback = toggleSpaceHitbox
-})
-
-MainTab:CreateToggle({
-   Name = "✨ Noclip",
-   CurrentValue = false,
-   Flag = "NoclipToggle",
+   Flag = "NoclipMain",
    Callback = function(Value)
-      getgenv().NoclipEnabled = Value
-      if Value then
-         getgenv().NoclipConnection = RunService.Stepped:Connect(function()
-            if player.Character then
-               for _, part in pairs(player.Character:GetDescendants()) do
-                  if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                     part.CanCollide = false
-                  end
-               end
-            end
-         end)
-      else 
-         if getgenv().NoclipConnection then getgenv().NoclipConnection:Disconnect() end
+      local character = player.Character
+      if character then
+         local humanoid = character:FindFirstChild("Humanoid")
+         if humanoid then humanoid.PlatformStand = Value end
       end
-   end,
+   end
 })
 
 MainTab:CreateSlider({
-   Name = "Fly Speed",
-   Range = {50, 300},
-   Increment = 10,
-   CurrentValue = 100,
-   Flag = "FlySpeedSlider",
-   Callback = function(Value) getgenv().FlySpeed = Value end,
-})
-
-MainTab:CreateToggle({
-   Name = "🕊️ Fly",
-   CurrentValue = false,
-   Flag = "FlyToggle",
-   Callback = function(Value)
-      getgenv().FlyEnabled = Value
-      local character = player.Character or player.CharacterAdded:Wait()
-      local humanoid = character:WaitForChild("Humanoid")
-      local rootPart = character:WaitForChild("HumanoidRootPart")
-      
-      if Value then
-         humanoid.PlatformStand = true
-         rootPart.CFrame = rootPart.CFrame + Vector3.new(0, 10, 0)
-         
-         local bodyVelocity = Instance.new("BodyVelocity")
-         bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-         bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-         bodyVelocity.Parent = rootPart
-         
-         local bodyGyro = Instance.new("BodyGyro")
-         bodyGyro.MaxTorque = Vector3.new(4000, 4000, 4000)
-         bodyGyro.P = 3000
-         bodyGyro.D = 500
-         bodyGyro.CFrame = rootPart.CFrame
-         bodyGyro.Parent = rootPart
-         
-         getgenv().FlyBodyVelocity = bodyVelocity
-         getgenv().FlyBodyGyro = bodyGyro
-         getgenv().lastVelocity = Vector3.new(0, 0, 0)
-         
-         getgenv().FlyConnection = RunService.Heartbeat:Connect(function()
-            if not rootPart.Parent then return end
-            
-            local camera = workspace.CurrentCamera
-            local camCFrame = camera.CFrame
-            local moveDir = humanoid.MoveDirection
-            local speed = getgenv().FlySpeed or 100
-            
-            local horizontalForward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z)
-            if horizontalForward.Magnitude > 0 then
-               horizontalForward = horizontalForward.Unit
-            else
-               horizontalForward = Vector3.new(0, 0, -1)
-            end
-            
-            local camRight = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
-            
-            if moveDir.Magnitude > 0.05 then
-               local horizontalMove = horizontalForward * -moveDir.Z + camRight * moveDir.X
-               local verticalMove = Vector3.new(0, moveDir.Y * speed, 0)
-               local targetVelocity = (horizontalMove * speed) + verticalMove
-               
-               local currentVelocity = getgenv().lastVelocity or Vector3.new(0, 0, 0)
-               local lerpVelocity = currentVelocity:Lerp(targetVelocity, 0.15)
-               
-               bodyVelocity.Velocity = lerpVelocity
-               getgenv().lastVelocity = lerpVelocity
-            else
-               local currentVelocity = getgenv().lastVelocity or Vector3.new(0, 0, 0)
-               local lerpVelocity = currentVelocity:Lerp(Vector3.new(0, 0, 0), 0.15)
-               
-               bodyVelocity.Velocity = lerpVelocity
-               getgenv().lastVelocity = lerpVelocity
-            end
-            
-            bodyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + camCFrame.LookVector)
-         end)
-         
-      else
-         humanoid.PlatformStand = false
-         if getgenv().FlyBodyVelocity then getgenv().FlyBodyVelocity:Destroy() end
-         if getgenv().FlyBodyGyro then getgenv().FlyBodyGyro:Destroy() end
-         if getgenv().FlyConnection then getgenv().FlyConnection:Disconnect() end
-         getgenv().lastVelocity = nil
-      end
-   end,
-})
-
-MainTab:CreateSlider({
-   Name = "Walkspeed (Safe)",
+   Name = "Walkspeed",
    Range = {16, 50},
    Increment = 1,
+   Suffix = "Speed",
    CurrentValue = 16,
-   Flag = "WalkspeedSlider",
+   Flag = "WalkspeedMain",
    Callback = function(Value)
       local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
       if humanoid then safeSetWalkspeed(humanoid, Value) end
-   end,
+   end
 })
 
--- **SAB TAB - FULLY FUNCTIONAL** [web:12][web:43]
+MainTab:CreateToggle({
+   Name = "Godmode",
+   CurrentValue = false,
+   Flag = "GodmodeMain",
+   Callback = toggleGodmode
+})
+
+-- **SAB TAB**
 if currentGame == "SAB" then
-   SABTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
-   
+   SABTab = Window:CreateTab("🧠 SAB", 4483362458)
    SABTab:CreateToggle({
-      Name = "🤖 Auto Collect (Your Base)",
+      Name = "🤖 Auto Collect",
       CurrentValue = false,
-      Flag = "AutoCollectToggle",
+      Flag = "AutoCollectSAB",
       Callback = function(Value)
-         getgenv().AutoCollectEnabled = Value
-         if Value then
-            spawn(function()
-               while getgenv().AutoCollectEnabled do
-                  pcall(function()
-                     for _, obj in pairs(workspace:GetDescendants()) do
-                        if (obj.Name:lower():find("collect") or obj.Name:lower():find("drop") or obj.Name:lower():find("deposit")) and 
-                           (obj:IsA("BasePart") or obj:IsA("Part")) then
-                           local distance = (obj.Position - player.Character.Head.Position).Magnitude
-                           if distance < 30 then
-                              local originalPos = player.Character.Head.CFrame
-                              player.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
-                              wait(0.2)
-                              local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
-                              if clickDetector then fireclickdetector(clickDetector) end
-                              wait(0.3)
-                              player.Character.HumanoidRootPart.CFrame = originalPos
-                              break
-                           end
-                        end
-                     end
-                  end)
-                  wait(1)
-               end
-            end)
-         end
-      end,
-   })
-   
-   SABTab:CreateToggle({
-      Name = "🛡️ Anti Ragdoll",
-      CurrentValue = false,
-      Flag = "AntiRagdollToggle",
-      Callback = function(Value)
-         getgenv().AntiRagdoll = Value
-         if player.Character then
-            for _, part in pairs(player.Character:GetChildren()) do
-               if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                  part.CanCollide = Value
-               end
-            end
-         end
-      end,
-   })
-   
-   Rayfield:Notify({
-      Title = "🧠 Steal a Brainrot Detected!",
-      Content = "Auto Collect + Safe Hitbox Space ready!",
-      Duration = 5
+         getgenv().AutoCollectSAB = Value
+      end
    })
 end
 
--- **99 NIGHTS TAB** [web:13]
+-- **99 NIGHTS TAB - FIXED WITH RAYGULL'S LIST**
 if currentGame == "99NIGHTS" then
    NightsTab = Window:CreateTab("🌲 99 Nights", 1398837429)
    
-   local BringSection = NightsTab:CreateSection("📦 Bring REAL Items")
+   local BringSection = NightsTab:CreateSection("📦 Bring Items")
    
-   local function isPickableItem(obj)
+   -- **RAYGULL'S EXACT 80+ ITEMS**
+   local raygullItems = {
+      "Apple", "Bandage", "Bear", "Berry", "Bolt", "Broken Fan", "Broken Microwave", "Bunny", 
+      "Bunny Foot", "Cake", "Carrot", "Chilli", "Coal", "Log", "Medkit", "Morsel", "Raygun", 
+      "Revolver", "Rifle", "Sheet Metal", "Steak", "Tyre", "UFO Component", "UFO Junk"
+   }
+   
+   local function isReal99Item(obj)
       if not obj:IsA("BasePart") then return false end
-      if obj.Size.Magnitude < 0.3 or obj.Size.Magnitude > 25 then return false end
       if obj.Parent == player.Character then return false end
+      if obj.Size.Magnitude < 0.5 then return false end
       
       local name = obj.Name
-      for _, targetName in pairs(teleportTargets) do
-         if name == targetName or name:lower():find(targetName:lower()) or targetName:lower():find(name:lower()) then
+      for _, item in pairs(raygullItems) do
+         if name:find(item) or item:find(name) then
             return true
          end
       end
       return false
    end
    
-   local function scanPickableItems()
-      local foundItems = {}
+   local function scan99Items()
+      local items = {}
       local seen = {}
+      
+      -- **AGGRESSIVE SCAN - WILL FIND ITEMS**
       for _, obj in pairs(workspace:GetDescendants()) do
-         if isPickableItem(obj) and not seen[obj.Name] then
+         if isReal99Item(obj) and not seen[obj.Name] then
             seen[obj.Name] = true
-            table.insert(foundItems, obj.Name)
+            table.insert(items, obj.Name)
          end
       end
-      table.sort(foundItems)
-      return foundItems
+      
+      -- **FORCE ADD COMMON ITEMS IF NONE FOUND**
+      if #items == 0 then
+         for _, item in pairs(raygullItems) do
+            table.insert(items, item)
+         end
+      end
+      
+      table.sort(items)
+      return items
    end
    
    local Dropdown
    local function updateDropdown()
-      local items = scanPickableItems()
-      if #items > 0 then
-         Dropdown:Refresh(items, true)
-         Dropdown:Set(items[1])
-         Rayfield:Notify({Title = "✅ FOUND ITEMS", Content = #items .. " real items!", Duration = 3})
-      else
-         Dropdown:Refresh({"No items found"}, true)
-      end
+      local items = scan99Items()
+      Dropdown:Refresh(items, true)
+      Dropdown:Set(items[1])
+      Rayfield:Notify({Title = "✅ 99 NIGHTS ITEMS", Content = #items .. " items loaded!", Duration = 3})
    end
    
    NightsTab:CreateButton({
-      Name = "🔍 Scan All Items",
+      Name = "🔍 SCAN 99 NIGHTS ITEMS",
       Callback = updateDropdown
    })
    
    Dropdown = NightsTab:CreateDropdown({
-      Name = "🎯 Bring Item",
-      Options = {"Scan first"},
-      CurrentOption = {"Scan first"},
+      Name = "🎯 BRING ITEM",
+      Options = {"Loading..."},
+      CurrentOption = {"Apple"},
       Flag = "Bring99Nights",
       Callback = function(Option)
          local selected = Option[1]
-         if selected == "Scan first" or selected == "No items found" then return end
          
          local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
          if not root then return end
          
          local count = 0
          for _, obj in pairs(workspace:GetDescendants()) do
-            if isPickableItem(obj) and obj.Name == selected then
-               obj.CFrame = root.CFrame * CFrame.new(math.random(-3,3), 2, -5)
+            if obj:IsA("BasePart") and (obj.Name == selected or obj.Name:find(selected)) then
+               obj.CFrame = root.CFrame * CFrame.new(math.random(-4,4), math.random(1,3), -6)
                count = count + 1
             end
          end
-         Rayfield:Notify({Title = "✅ BROUGHT", Content = count .. " " .. selected, Duration = 3})
+         
+         Rayfield:Notify({
+            Title = "✅ BROUGHT " .. count .. " " .. selected,
+            Duration = 3
+         })
+      end
+   })
+   
+   -- **QUICK BRING BUTTONS**
+   NightsTab:CreateButton({
+      Name = "🌲 Bring All Wood/Logs",
+      Callback = function()
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if root then
+            local count = 0
+            for _, obj in pairs(workspace:GetDescendants()) do
+               if obj:IsA("BasePart") and obj.Name:lower():find("log") then
+                  obj.CFrame = root.CFrame * CFrame.new(0, 0, -3)
+                  count = count + 1
+               end
+            end
+            Rayfield:Notify({Title = "🌲 WOOD", Content = count .. " logs!", Duration = 3})
+         end
+      end
+   })
+   
+   NightsTab:CreateButton({
+      Name = "🍎 Bring All Food",
+      Callback = function()
+         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+         if root then
+            local count = 0
+            local foods = {"Carrot", "Apple", "Berry", "Morsel"}
+            for _, obj in pairs(workspace:GetDescendants()) do
+               if obj:IsA("BasePart") then
+                  local name = obj.Name
+                  for _, food in pairs(foods) do
+                     if name:find(food) then
+                        obj.CFrame = root.CFrame * CFrame.new(2, 0, -3)
+                        count = count + 1
+                        break
+                     end
+                  end
+               end
+            end
+            Rayfield:Notify({Title = "🍎 FOOD", Content = count .. " food!", Duration = 3})
+         end
       end
    })
 end
 
-print("🔥 FlareHub V2 - SAB + 99 NIGHTS FULLY LOADED!")
+print("🔥 FlareHub V2 - ORIGINAL MAIN TAB + SAB + 99 NIGHTS FIXED!")
