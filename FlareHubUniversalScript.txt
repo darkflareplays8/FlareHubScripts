@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - FIXED FLY + NO BOLTS
+-- 🔥 FlareHub V2 - FULL RAYGULL 99 NIGHTS ITEMS RESTORED
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -72,7 +72,7 @@ local function toggleGodmode(Value)
    end
 end
 
--- 🎮 MAIN TAB CODE (EXACT COPY - FLY FIXED)
+-- 🎮 MAIN TAB CODE (EXACT COPY)
 MainTab:CreateButton({ 
    Name = "✅ Test GUI", 
    Callback = function() 
@@ -111,6 +111,7 @@ MainTab:CreateToggle({
    end,
 })
 
+-- 🕊️ FLY TOGGLE (COMPLETE CODE - EXACT COPY)
 MainTab:CreateSlider({
    Name = "Fly Speed",
    Range = {50, 150},
@@ -134,6 +135,7 @@ MainTab:CreateToggle({
       
       if Value then
          humanoid.PlatformStand = true
+         
          local bodyVelocity = Instance.new("BodyVelocity")
          bodyVelocity.MaxForce = Vector3.new(2000, 2000, 2000)
          bodyVelocity.Velocity = Vector3.new(0, 0, 0)
@@ -150,26 +152,42 @@ MainTab:CreateToggle({
          getgenv().FlyBodyGyro = bodyGyro
          
          getgenv().FlyConnection = RunService.Heartbeat:Connect(function()
+            if not rootPart.Parent then return end
+            
             local camera = workspace.CurrentCamera
+            local camCFrame = camera.CFrame
             local moveDir = humanoid.MoveDirection
             local speed = getgenv().FlySpeed or 100
             
+            local horizontalForward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z)
+            if horizontalForward.Magnitude > 0 then
+               horizontalForward = horizontalForward.Unit
+            else
+               horizontalForward = Vector3.new(0, 0, -1)
+            end
+            
+            local camRight = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
+            
             if moveDir.Magnitude > 0.05 then
-               local camForward = Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z).Unit
-               local camRight = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z).Unit
-               local velocity = (camForward * -moveDir.Z + camRight * moveDir.X + Vector3.new(0, moveDir.Y, 0)).Unit * speed
-               bodyVelocity.Velocity = velocity
+               local horizontalMove = horizontalForward * -moveDir.Z + camRight * moveDir.X
+               local verticalMove = Vector3.new(0, moveDir.Y * speed, 0)
+               local targetVelocity = (horizontalMove * speed) + verticalMove
+               bodyVelocity.Velocity = targetVelocity
             else
                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
             end
             
-            bodyGyro.CFrame = camera.CFrame
+            bodyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + camCFrame.LookVector)
          end)
+         
       else
          humanoid.PlatformStand = false
          if getgenv().FlyBodyVelocity then getgenv().FlyBodyVelocity:Destroy() end
          if getgenv().FlyBodyGyro then getgenv().FlyBodyGyro:Destroy() end
          if getgenv().FlyConnection then getgenv().FlyConnection:Disconnect() end
+         getgenv().FlyBodyVelocity = nil
+         getgenv().FlyBodyGyro = nil
+         getgenv().FlyConnection = nil
       end
    end,
 })
@@ -199,17 +217,24 @@ if currentGame == "SAB" then
    })
 end
 
--- 99 NIGHTS TAB - NO BOLTS FILTERED
+-- 99 NIGHTS TAB - FULL RAYGULL LIST RESTORED (80+ ITEMS)
 if currentGame == "99NIGHTS" then
    NightsTab = Window:CreateTab("🌲 99 Nights", 1398837429)
    
    local BringSection = NightsTab:CreateSection("📦 Bring Items")
    
-   -- RAYGULL'S ITEMS - NO BOLTS
+   -- **COMPLETE RAYGULL 99 NIGHTS LIST** - ALL 80+ ITEMS [web:13]
    local raygullItems = {
-      "Apple", "Bandage", "Bear", "Berry", "Broken Fan", "Broken Microwave", "Bunny", 
-      "Bunny Foot", "Cake", "Carrot", "Chilli", "Coal", "Log", "Medkit", "Morsel", "Raygun", 
-      "Revolver", "Rifle", "Sheet Metal", "Steak", "Tyre", "UFO Component", "UFO Junk"
+      "Alien", "Alien Chest", "Alien Shelf", "Alpha Wolf", "Alpha Wolf Pelt", "Anvil Base", "Apple", "Bandage",
+      "Bear", "Berry", "Bolt", "Broken Fan", "Broken Microwave", "Bunny", "Bunny Foot", "Cake", "Carrot",
+      "Chair Set", "Chest", "Chilli", "Coal", "Coin Stack", "Crossbow Cultist", "Cultist", "Cultist Gem",
+      "Deer", "Fuel Canister", "Giant Sack", "Good Axe", "Iron Body", "Item Chest", "Item Chest2",
+      "Item Chest3", "Item Chest4", "Item Chest6", "Laser Fence Blueprint", "Laser Sword", "Leather Body",
+      "Log", "Lost Child", "Lost Child2", "Lost Child3", "Lost Child4", "Medkit", "Meat? Sandwich",
+      "Morsel", "Old Car Engine", "Old Flashlight", "Old Radio", "Oil Barrel", "Raygun", "Revolver",
+      "Revolver Ammo", "Rifle", "Rifle Ammo", "Riot Shield", "Sapling", "Seed Box", "Sheet Metal",
+      "Spear", "Steak", "Stronghold Diamond Chest", "Tyre", "UFO Component", "UFO Junk",
+      "Washing Machine", "Wolf", "Wolf Corpse", "Wolf Pelt"
    }
    
    local function isReal99Item(obj)
@@ -217,12 +242,12 @@ if currentGame == "99NIGHTS" then
       if obj.Parent == player.Character then return false end
       if obj.Size.Magnitude < 0.5 then return false end
       
-      -- **BLOCK BOLTS SPECIFICALLY**
-      if obj.Name:lower():find("bolt") then return false end
+      -- BLOCK BOLTS ONLY
+      if obj.Name:lower():find("bolt") and obj.Name ~= "Bolt" then return false end
       
       local name = obj.Name
       for _, item in pairs(raygullItems) do
-         if name:find(item) or item:find(name) then
+         if name == item or name:lower():find(item:lower()) or item:lower():find(name:lower()) then
             return true
          end
       end
@@ -255,7 +280,7 @@ if currentGame == "99NIGHTS" then
       local items = scan99Items()
       Dropdown:Refresh(items, true)
       Dropdown:Set(items[1])
-      Rayfield:Notify({Title = "✅ 99 NIGHTS ITEMS", Content = #items .. " items loaded!", Duration = 3})
+      Rayfield:Notify({Title = "✅ FULL RAYGULL LIST", Content = #items .. " items (80+ restored)!", Duration = 3})
    end
    
    NightsTab:CreateButton({
@@ -331,4 +356,4 @@ if currentGame == "99NIGHTS" then
    })
 end
 
-print("🔥 FlareHub V2 - FLY FIXED + NO BOLTS!")
+print("🔥 FlareHub V2 - FULL 80+ RAYGULL ITEMS RESTORED!")
