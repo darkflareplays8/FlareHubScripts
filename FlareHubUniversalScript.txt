@@ -1,5 +1,8 @@
--- 🔥 FlareHub V2 - AUTO COLLECT ONLY (NO FREEZE)
+-- 🔥 FlareHub V2 - HITBOX TO SPACE + FIXED RAYFIELD
+getgenv().SecureMode = true
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+Rayfield:LoadConfiguration()
 
 local Window = Rayfield:CreateWindow({
    Name = "🔥 FlareHub V2",
@@ -15,6 +18,7 @@ local BrainrotTab
 
 local player = game:GetService("Players").LocalPlayer
 local RunService = game:GetService("RunService")
+task.wait(1)
 
 -- GAME DETECTION
 local function isStealABrainrot()
@@ -28,7 +32,7 @@ local function isStealABrainrot()
    return false
 end
 
--- SAFE WALKSPD BYPASS
+-- SAFE WALKSPD
 local function safeSetWalkspeed(humanoid, speed)
    local targetSpeed = math.clamp(speed, 16, 50)
    spawn(function()
@@ -43,11 +47,30 @@ local function safeSetWalkspeed(humanoid, speed)
    end)
 end
 
--- Create Brainrot Tab ONLY if in Steal a Brainrot
+-- HITBOX TO SPACE
+local function toggleSpaceHitbox(Value)
+   if not player.Character then return end
+   local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+   if not humanoidRootPart then return end
+   
+   if Value then
+      -- SEND HITBOX TO SPACE (1000 studs up)
+      humanoidRootPart.CFrame = humanoidRootPart.CFrame + Vector3.new(0, 1000, 0)
+      humanoidRootPart.Anchored = true
+      humanoidRootPart.CanCollide = false
+      print("Hitbox sent to space! Visual stays normal.")
+   else
+      -- RETURN HITBOX TO NORMAL
+      humanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame - Vector3.new(0, 1000, 0)
+      humanoidRootPart.Anchored = false
+      humanoidRootPart.CanCollide = true
+   end
+end
+
+-- Steal a Brainrot Tab
 if isStealABrainrot() then
    BrainrotTab = Window:CreateTab("🧠 Steal a Brainrot", 4483362458)
    
-   -- AUTO COLLECT ONLY (No TP to brainrots)
    BrainrotTab:CreateToggle({
       Name = "🤖 Auto Collect (Your Base)",
       CurrentValue = false,
@@ -58,32 +81,25 @@ if isStealABrainrot() then
             spawn(function()
                while getgenv().AutoCollectEnabled do
                   pcall(function()
-                     -- Find YOUR BASE collector only
                      for _, obj in pairs(workspace:GetDescendants()) do
                         if (obj.Name:lower():find("collect") or obj.Name:lower():find("drop") or obj.Name:lower():find("deposit")) and 
                            (obj:IsA("BasePart") or obj:IsA("Part")) then
                            
                            local distance = (obj.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                           if distance < 30 then -- Only nearby collectors
-                              -- BRIEF TP + IMMEDIATE COLLECT + RETURN
+                           if distance < 30 then
                               local originalPos = player.Character.HumanoidRootPart.CFrame
-                              
                               player.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
                               wait(0.2)
-                              
                               local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
                               if clickDetector then fireclickdetector(clickDetector) end
-                              
-                              wait(0.3) -- Collect time
-                              
-                              -- INSTANT RETURN (anti-freeze)
+                              wait(0.3)
                               player.Character.HumanoidRootPart.CFrame = originalPos
                               break
                            end
                         end
                      end
                   end)
-                  wait(1) -- Safe loop delay
+                  wait(1)
                end
             end)
          end
@@ -107,8 +123,18 @@ if isStealABrainrot() then
    })
 end
 
--- MAIN TAB (Universal - unchanged)
-Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() end })
+-- MAIN TAB
+Tab:CreateButton({ Name = "✅ Test GUI", Callback = function() print("FlareHub loaded!") end })
+
+-- 🚀 HITBOX TO SPACE TOGGLE
+Tab:CreateToggle({
+   Name = "🌌 Hitbox to Space",
+   CurrentValue = false,
+   Flag = "SpaceHitboxToggle",
+   Callback = function(Value)
+      toggleSpaceHitbox(Value)
+   end,
+})
 
 Tab:CreateToggle({
    Name = "✨ Noclip",
@@ -221,4 +247,21 @@ Tab:CreateToggle({
 
 Tab:CreateSlider({
    Name = "Walkspeed (Safe)",
-   Range =
+   Range = {16, 50},
+   Increment = 1,
+   CurrentValue = 16,
+   Flag = "WalkspeedSlider",
+   Callback = function(Value)
+      local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+      if humanoid then safeSetWalkspeed(humanoid, Value) end
+   end,
+})
+
+-- NOTIFICATION
+if isStealABrainrot() then
+   Rayfield:Notify({
+      Title = "🧠 Steal a Brainrot Detected!",
+      Content = "Auto Collect + Hitbox Space + Anti Ragdoll!",
+      Duration = 5
+   })
+end
