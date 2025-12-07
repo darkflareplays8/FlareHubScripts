@@ -198,21 +198,18 @@ MainTab:CreateToggle({
     end,
 })
 
--- 📝 CREDITS TAB (MADE LARGER + BOLD)
-CreditsTab:CreateSection("👑 CREATOR")
-
+-- 📝 CREDITS TAB (BIGGEST ProfessionalFlare)
+CreditsTab:CreateSection("🔥 FLAREHUB V2 🔥")
+CreditsTab:CreateSection("👑 CREATOR 👑")
 CreditsTab:CreateParagraph({
-    Title = "👑 ProfessionalFlare",
+    Title = "🌟 PROFESSIONALFLARE 🌟",
     Content = "Script Developer & Designer"
 })
-
-CreditsTab:CreateSection("👤 CONTACT")
-
+CreditsTab:CreateSection("📞 CONTACT INFO")
 CreditsTab:CreateParagraph({
     Title = "Roblox",
     Content = "DarealBloxfruiter"
 })
-
 CreditsTab:CreateParagraph({
     Title = "Discord",
     Content = "darkflareplays8"
