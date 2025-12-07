@@ -1,4 +1,4 @@
--- 🔥 FlareHub V2 - Noclip • Godmode • Invis • Hitbox Desync(OP)
+-- 🔥 FlareHub V2 - Noclip • Godmode • Walkspeed • Hitbox Desync(OP)
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -7,7 +7,7 @@ Rayfield:LoadConfiguration()
 local Window = Rayfield:CreateWindow({
     Name = "🔥 FlareHub V2",
     LoadingTitle = "FlareHub V2",
-    LoadingSubtitle = "Noclip • Godmode • Invis • Hitbox Desync(OP)",
+    LoadingSubtitle = "Noclip • Godmode • Walkspeed • Hitbox Desync(OP)",
     ConfigurationSaving = { 
         Enabled = true, 
         FolderName = "FlareHub", 
@@ -56,40 +56,6 @@ local function toggleGodmode(Value)
             godmodeConnection:Disconnect()
             godmodeConnection = nil
         end
-    end
-end
-
--- INVISIBILITY (LOCAL - you can't see yourself)
-local invisBackup = nil
-local function setTransparencyForCharacter(char, alpha)
-    for _, obj in ipairs(char:GetDescendants()) do
-        if obj:IsA("BasePart") or obj:IsA("Decal") then
-            obj.Transparency = alpha
-        end
-    end
-end
-
-local function toggleInvisibility(enabled)
-    local char = player.Character
-    if not char then return end
-
-    if enabled then
-        invisBackup = {}
-        for _, obj in ipairs(char:GetDescendants()) do
-            if (obj:IsA("BasePart") or obj:IsA("Decal")) and obj ~= char:FindFirstChild("HumanoidRootPart") then
-                invisBackup[obj] = obj.Transparency
-            end
-        end
-        setTransparencyForCharacter(char, 1)
-    else
-        if invisBackup then
-            for inst, oldAlpha in pairs(invisBackup) do
-                if inst and inst.Parent then
-                    inst.Transparency = oldAlpha
-                end
-            end
-        end
-        invisBackup = nil
     end
 end
 
@@ -152,7 +118,7 @@ end
 MainTab:CreateButton({ 
     Name = "✅ Test GUI", 
     Callback = function() 
-        print("🔥 FlareHub V2 READY! (Hitbox Desync(OP) + More)") 
+        print("🔥 FlareHub V2 READY! (Hitbox Desync(OP))") 
         Rayfield:Notify({
             Title = "FlareHub V2",
             Content = "All features loaded successfully!",
@@ -210,15 +176,6 @@ MainTab:CreateSlider({
 })
 
 MainTab:CreateToggle({
-    Name = "👻 Invisibility (Local)",
-    CurrentValue = false,
-    Flag = "InvisibilityToggle",
-    Callback = function(Value)
-        toggleInvisibility(Value)
-    end,
-})
-
-MainTab:CreateToggle({
     Name = "🎯 Hitbox Desync (OP)",
     CurrentValue = false,
     Flag = "HitboxDesyncToggle",
@@ -227,4 +184,4 @@ MainTab:CreateToggle({
     end,
 })
 
-print("🔥 FlareHub V2 - COMPLETE (Noclip, Godmode, Invis, Hitbox Desync(OP)) LOADED!")
+print("🔥 FlareHub V2 - Noclip • Godmode • Walkspeed • Hitbox Desync(OP) LOADED!")
