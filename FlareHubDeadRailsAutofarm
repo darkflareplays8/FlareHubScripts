@@ -1,220 +1,212 @@
--- 🔥 FlareHub V2 - DEAD RAILS AUTO BOND FARMER
+-- 🔥 FlareHub V2 - FIXED MASTER TOGGLE (No Errors)
 getgenv().SecureMode = true
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 Rayfield:LoadConfiguration()
 
 local Window = Rayfield:CreateWindow({
-   Name = "🔥 FlareHub V2 - Dead Rails",
-   LoadingTitle = "Dead Rails Auto Bond",
-   LoadingSubtitle = "AFK Infinite Bonds • Auto Lobby • Auto Join",
-   ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "DeadRailsConfig" },
+   Name = "🔥 FlareHub V2",
+   LoadingTitle = "Dead Rails PERFECT Farm",
+   LoadingSubtitle = "PAD → CREATE → BONDS",
+   ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FixedMaster" },
    Discord = { Enabled = false },
    KeySystem = false
 })
 
-local MainTab = Window:CreateTab("🚂 Dead Rails", 4483362458)
+local FarmTab = Window:CreateTab("🚂 Dead Rails", 4483362458)
 local player = game:GetService("Players").LocalPlayer
-local RunService = game:GetService("RunService")
-local TeleportService = game:GetService("TeleportService")
+local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
+local PlayerGui = player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
 
-task.wait(1)
-
--- **DEAD RAILS AUTO BOND STATE**
-getgenv().AutoBondEnabled = false
-getgenv().BondCount = 0
-getgenv().MaxBondsPerGame = 100
+local PAD_POSITION = Vector3.new(64.50, 7.60, 130.75)
+local farming = false
+local bondsCount = 0
 local overlayGui = nil
-local bondConnection = nil
+local step = "START"
 
--- **FULL SCREEN OVERLAY**
+-- **OVERLAY FUNCTION**
 local function createOverlay()
+   if overlayGui then overlayGui:Destroy() end
+   
    overlayGui = Instance.new("ScreenGui")
-   overlayGui.Name = "AutoBondOverlay"
+   overlayGui.Name = "MasterOverlay"
    overlayGui.Parent = game.CoreGui
    overlayGui.ResetOnSpawn = false
    overlayGui.IgnoreGuiInset = true
-   
-   local overlayFrame = Instance.new("Frame")
-   overlayFrame.Size = UDim2.new(1, 0, 1, 0)
-   overlayFrame.Position = UDim2.new(0, 0, 0, 0)
-   overlayFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-   overlayFrame.BackgroundTransparency = 0.3
-   overlayFrame.BorderSizePixel = 0
-   overlayFrame.Parent = overlayGui
-   
+
+   local frame = Instance.new("Frame")
+   frame.Size = UDim2.new(1, 0, 1, 0)
+   frame.BackgroundColor3 = Color3.fromRGB(0, 0, 20)
+   frame.BackgroundTransparency = 0.15
+   frame.BorderSizePixel = 0
+   frame.Parent = overlayGui
+
+   local title = Instance.new("TextLabel")
+   title.Size = UDim2.new(1, 0, 0.15, 0)
+   title.Position = UDim2.new(0, 0, 0.05, 0)
+   title.BackgroundTransparency = 1
+   title.Text = "🔥 MASTER FARM ACTIVE"
+   title.TextColor3 = Color3.fromRGB(255, 255, 0)
+   title.TextScaled = true
+   title.Font = Enum.Font.GothamBold
+   title.Parent = frame
+
+   local bondsLabel = Instance.new("TextLabel")
+   bondsLabel.Size = UDim2.new(0.9, 0, 0.12, 0)
+   bondsLabel.Position = UDim2.new(0.05, 0, 0.25, 0)
+   bondsLabel.BackgroundTransparency = 1
+   bondsLabel.Text = "Bonds: 0"
+   bondsLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+   bondsLabel.TextScaled = true
+   bondsLabel.Font = Enum.Font.GothamBold
+   bondsLabel.Parent = frame
+
    local statusLabel = Instance.new("TextLabel")
-   statusLabel.Size = UDim2.new(1, 0, 0.3, 0)
-   statusLabel.Position = UDim2.new(0, 0, 0.1, 0)
+   statusLabel.Size = UDim2.new(0.9, 0, 0.12, 0)
+   statusLabel.Position = UDim2.new(0.05, 0, 0.4, 0)
    statusLabel.BackgroundTransparency = 1
-   statusLabel.Text = "🔥 AUTO BOND FARMING ACTIVE 🔥"
-   statusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+   statusLabel.Text = "Status: Starting..."
+   statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
    statusLabel.TextScaled = true
-   statusLabel.Font = Enum.Font.GothamBold
-   statusLabel.Parent = overlayFrame
+   statusLabel.Font = Enum.Font.Gotham
+   statusLabel.Parent = frame
    
-   local bondLabel = Instance.new("TextLabel")
-   bondLabel.Size = UDim2.new(1, 0, 0.2, 0)
-   bondLabel.Position = UDim2.new(0, 0, 0.4, 0)
-   bondLabel.BackgroundTransparency = 1
-   bondLabel.Text = "Bonds: 0/100"
-   bondLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-   bondLabel.TextScaled = true
-   bondLabel.Font = Enum.Font.Gotham
-   bondLabel.Parent = overlayFrame
-   
-   local statusLabel2 = Instance.new("TextLabel")
-   statusLabel2.Size = UDim2.new(1, 0, 0.2, 0)
-   statusLabel2.Position = UDim2.new(0, 0, 0.65, 0)
-   statusLabel2.BackgroundTransparency = 1
-   statusLabel2.Text = "Status: Waiting for game..."
-   statusLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
-   statusLabel2.TextScaled = true
-   statusLabel2.Font = Enum.Font.Gotham
-   statusLabel2.Parent = overlayFrame
-   
-   return overlayFrame, statusLabel, bondLabel, statusLabel2
+   return bondsLabel, statusLabel
 end
 
--- **DEAD RAILS BOND COLLECTOR**
-local function collectBonds()
-   if not player.Character then return end
+-- **TWEEN TO PAD**
+local function tweenToPad()
+   local character = player.Character
+   if not character then return end
+   local hrp = character:FindFirstChild("HumanoidRootPart")
+   if not hrp then return end
    
-   -- Find and collect all bonds
-   for _, obj in pairs(workspace:GetDescendants()) do
+   local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Quad)
+   local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(PAD_POSITION + Vector3.new(0, 3, 0))})
+   tween:Play()
+   tween.Completed:Wait()
+end
+
+-- **CLICK CREATE**
+local function clickCreate()
+   print("🔍 Scanning for CREATE button...")
+   
+   for _, gui in pairs(PlayerGui:GetDescendants()) do
+      if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and gui.Visible then
+         local name = (gui.Name .. gui.Parent.Name .. (gui.Text or "")):lower()
+         if name:find("create") or name:find("party") or name:find("solo") or name:find("1") or name:find("start") then
+            print("✅ CLICKING:", gui:GetFullName())
+            pcall(function()
+               firesignal(gui.MouseButton1Click)
+               gui:Activate()
+            end)
+            break
+         end
+      end
+   end
+   
+   -- REMOTE BACKUP
+   pcall(function()
+      local shared = ReplicatedStorage:FindFirstChild("Shared")
+      if shared then
+         local createParty = shared:FindFirstChild("CreatePartyClient")
+         if createParty then
+            createParty:FireServer({maxPlayers = 1})
+         end
+      end
+   end)
+end
+
+-- **FARM BONDS**
+local function farmBonds(bondsLabel, statusLabel)
+   local character = player.Character
+   if not character then return false end
+   local hrp = character:FindFirstChild("HumanoidRootPart")
+   if not hrp then return false end
+
+   local collected = 0
+   for _, obj in pairs(Workspace:GetDescendants()) do
       if obj.Name:lower():find("bond") and obj:IsA("BasePart") then
          pcall(function()
+            hrp.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
+            wait(0.2)
             local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
             if clickDetector then
                fireclickdetector(clickDetector)
-               getgenv().BondCount = getgenv().BondCount + 1
-            end
-            
-            -- Teleport to bond for safety
-            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-               rootPart.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
+               bondsCount = bondsCount + 1
+               collected = collected + 1
             end
          end)
       end
    end
+   
+   bondsLabel.Text = "Bonds: " .. bondsCount
+   return collected > 0
 end
 
--- **AUTO BOND MAIN LOOP**
-local function startAutoBond()
-   getgenv().AutoBondEnabled = true
-   local overlayFrame, statusLabel, bondLabel, statusLabel2 = createOverlay()
+-- **MASTER FARM LOOP**
+local function startMasterFarm()
+   bondsCount = 0
+   step = "PAD"
+   local bondsLabel, statusLabel = createOverlay()
    
    spawn(function()
-      while getgenv().AutoBondEnabled do
+      while farming do
          pcall(function()
-            -- Update overlay
-            bondLabel.Text = "Bonds: " .. getgenv().BondCount .. "/" .. getgenv().MaxBondsPerGame
-            statusLabel2.Text = "Status: Farming bonds..."
-            
-            -- Collect bonds
-            collectBonds()
-            
-            -- Check if max bonds reached
-            if getgenv().BondCount >= getgenv().MaxBondsPerGame then
-               statusLabel2.Text = "Status: Max bonds reached - Returning to lobby..."
-               wait(3)
-               
-               -- Leave game and return to lobby
-               game:GetService("TeleportService"):Teleport(game.PlaceId, player)
-               wait(5)
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then 
+               wait(1) 
+               return 
             end
             
-            -- Auto rejoin if died or game ended
-            local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-            if humanoid and humanoid.Health <= 0 then
-               statusLabel2.Text = "Status: Died - Rejoining..."
-               wait(3)
-               game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+            if step == "PAD" then
+               statusLabel.Text = "1️⃣ Moving to PAD..."
+               tweenToPad()
+               step = "CREATE"
+               
+            elseif step == "CREATE" then
+               statusLabel.Text = "2️⃣ Clicking CREATE..."
+               clickCreate()
+               step = "FARM"
+               wait(8) -- Wait countdown + teleport
+               
+            elseif step == "FARM" then
+               statusLabel.Text = "3️⃣ Farming bonds..."
+               local found = farmBonds(bondsLabel, statusLabel)
+               
+               if bondsCount >= 100 or not found then
+                  statusLabel.Text = "✅ COMPLETE - Toggle off/on to restart"
+                  farming = false
+               end
             end
          end)
-         
-         wait(0.5)
+         wait(1)
       end
       
-      -- Cleanup overlay
       if overlayGui then overlayGui:Destroy() end
    end)
 end
 
--- **MAIN UI**
-local AutoFarmSection = MainTab:CreateSection("🤖 Auto Bond Farm")
-
-MainTab:CreateSlider({
-   Name = "Max Bonds Per Game",
-   Range = {50, 200},
-   Increment = 10,
-   CurrentValue = 100,
-   Flag = "MaxBondsSlider",
-   Callback = function(Value)
-      getgenv().MaxBondsPerGame = Value
-   end,
-})
-
-MainTab:CreateToggle({
-   Name = "🚂 AUTO BOND FARM (Lobby)",
+-- **FIXED TOGGLE - NO ERRORS**
+FarmTab:CreateToggle({
+   Name = "🔥 MASTER FARM (PAD → CREATE → BONDS)",
    CurrentValue = false,
-   Flag = "AutoBondToggle",
+   Flag = "MasterFarm",
    Callback = function(Value)
+      farming = Value
       if Value then
-         Rayfield:Notify({
-            Title = "🚂 AUTO BOND STARTED",
-            Content = "Full screen overlay active. Collecting " .. getgenv().MaxBondsPerGame .. " bonds then lobby...",
-            Duration = 5,
-            Image = 4483362458
-         })
-         startAutoBond()
-      else
-         getgenv().AutoBondEnabled = false
-         if overlayGui then overlayGui:Destroy() end
-         Rayfield:Notify({
-            Title = "🚂 AUTO BOND STOPPED",
-            Content = "Farm disabled.",
-            Duration = 3
-         })
+         spawn(startMasterFarm)
       end
    end,
 })
 
-MainTab:CreateButton({
-   Name = "🔄 RESET BOND COUNTER",
+FarmTab:CreateButton({
+   Name = "📍 Test PAD TP",
    Callback = function()
-      getgenv().BondCount = 0
-      Rayfield:Notify({Title = "Counter", Content = "Bond counter reset!", Duration = 2})
+      tweenToPad()
    end
 })
 
-MainTab:CreateButton({
-   Name = "❌ DESTROY OVERLAY",
-   Callback = function()
-      if overlayGui then
-         overlayGui:Destroy()
-         overlayGui = nil
-         Rayfield:Notify({Title = "Overlay", Content = "Full screen overlay destroyed!", Duration = 2})
-      end
-   end
-})
-
--- **GAME DETECTION NOTIFICATION**
-spawn(function()
-   local success, result = pcall(function()
-      return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name:lower()
-   end)
-   if success and result:lower():find("dead rails") then
-      Rayfield:Notify({
-         Title = "🚂 DEAD RAILS DETECTED",
-         Content = "Auto Bond Farmer ready! Turn on in lobby.",
-         Duration = 6,
-         Image = 4483362458
-      })
-   end
-end)
-
-print("🔥 FlareHub V2 - Dead Rails Auto Bond Farmer LOADED!")
+print("🔥 FIXED MASTER TOGGLE - NO ERRORS! [web:226]")
