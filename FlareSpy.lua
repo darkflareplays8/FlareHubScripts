@@ -1,4 +1,4 @@
--- SpyFlare - lightweight Remote spy GUI (FULL VERSION)
+-- SpyFlare - lightweight Remote spy GUI (ENHANCED VERSION)
 
 if getgenv().SpyFlareRunning then
     return
@@ -58,6 +58,18 @@ local UIList = Instance.new("UIListLayout")
 UIList.Parent = ListFrame
 UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- "Nothing Yet" placeholder
+local NoCallsLabel = Instance.new("TextLabel")
+NoCallsLabel.Size = UDim2.new(1, 0, 1, 0)
+NoCallsLabel.BackgroundTransparency = 1
+NoCallsLabel.Text = "Nothing Yet"
+NoCallsLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+NoCallsLabel.Font = Enum.Font.Gotham
+NoCallsLabel.TextSize = 14
+NoCallsLabel.TextXAlignment = Enum.TextXAlignment.Center
+NoCallsLabel.TextYAlignment = Enum.TextYAlignment.Center
+NoCallsLabel.Parent = ListFrame
+
 -- right-side detail (HIDDEN until selection)
 local Detail = Instance.new("TextBox")
 Detail.Size = UDim2.new(1, -270, 1, -28)
@@ -69,7 +81,7 @@ Detail.TextWrapped = true
 Detail.TextXAlignment = Enum.TextXAlignment.Left
 Detail.TextYAlignment = Enum.TextYAlignment.Top
 Detail.TextSize = 14
-Detail.Text = ""
+Detail.Text = "Select a call on the left"
 Detail.ClearTextOnFocus = false
 Detail.MultiLine = true
 Detail.Visible = false
@@ -143,37 +155,60 @@ local function buildCall(remote, method, args)
     return string.format("game.%s:%s(%s)", path, method, table.concat(argStrings, ", "))
 end
 
--- ========= Hook remotes =========
-local remotes = {}
+-- ========= Call tracking (for count feature) =========
+local callCounts = {}
+local callButtons = {}
 
 local function hookInstance(obj)
-    if remotes[obj] then return end
+    if callButtons[obj] then return end
     if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-        remotes[obj] = true
+        callButtons[obj] = true
         local method = obj:IsA("RemoteEvent") and "FireServer" or "InvokeServer"
 
         local old
         old = hookfunction(obj[method], function(self, ...)
             local args = {...}
             local lineCode = buildCall(self, method, args)
+            local fullPath = self:GetFullName()
+            local displayText = method.." | "..shortName(fullPath)
 
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, -4, 0, 20)
-            btn.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
-            btn.BorderSizePixel = 0
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 12
-            btn.TextXAlignment = Enum.TextXAlignment.Left
-            btn.Text = method.." | "..shortName(self:GetFullName())
-            btn.Parent = ListFrame
+            -- Count calls
+            callCounts[fullPath] = (callCounts[fullPath] or 0) + 1
+            local count = callCounts[fullPath]
 
-            btn.MouseButton1Click:Connect(function()
-                SelectedCode = lineCode
-                Detail.Text = lineCode
-                Detail.Visible = true
-                CopyBtn.Visible = true
-            end)
+            -- Hide "Nothing Yet" if first call
+            if NoCallsLabel then
+                NoCallsLabel:Destroy()
+                NoCallsLabel = nil
+            end
+
+            -- Update or create button
+            local btn = callButtons[fullPath]
+            if btn then
+                -- Update existing button count
+                btn.Text = displayText.." ("..count..")x"
+            else
+                -- Create new button
+                btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(1, -4, 0, 20)
+                btn.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
+                btn.BorderSizePixel = 0
+                btn.TextColor3 = Color3.new(1,1,1)
+                btn.Font = Enum.Font.Gotham
+                btn.TextSize = 12
+                btn.TextXAlignment = Enum.TextXAlignment.Left
+                btn.Text = displayText.." (1)x"
+                btn.Parent = ListFrame
+
+                btn.MouseButton1Click:Connect(function()
+                    SelectedCode = lineCode
+                    Detail.Text = lineCode
+                    Detail.Visible = true
+                    CopyBtn.Visible = true
+                end)
+
+                callButtons[fullPath] = btn
+            end
 
             ListFrame.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y + 8)
 
