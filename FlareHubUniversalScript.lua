@@ -18,6 +18,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 local MainTab = Window:CreateTab("🎮 Main", 4483362458)
+local CreditsTab = Window:CreateTab("📝 Credits", 4483362458)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -152,7 +153,6 @@ MainTab:CreateToggle({
                     end
                 end
             end)
-            -- EXTRA AGGRESSIVE LOOP (beats most anti-noclip)
             getgenv().NoclipConnection2 = RunService.Heartbeat:Connect(function()
                 if player.Character then
                     for _, part in pairs(player.Character:GetDescendants()) do
@@ -196,6 +196,22 @@ MainTab:CreateToggle({
     Callback = function(Value)
         toggleHitboxDesync(Value)
     end,
+})
+
+-- 📝 CREDITS TAB
+CreditsTab:CreateParagraph({
+    Title = "Created by",
+    Content = "ProfessionalFlare"
+})
+
+CreditsTab:CreateParagraph({
+    Title = "Roblox",
+    Content = "DarealBloxfruiter"
+})
+
+CreditsTab:CreateParagraph({
+    Title = "Discord",
+    Content = "darkflareplays8"
 })
 
 print("🔥 FlareHub V2 - Noclip(Anti-Detection) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
