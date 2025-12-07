@@ -58,6 +58,7 @@ local UIList = Instance.new("UIListLayout")
 UIList.Parent = ListFrame
 UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- right‑side detail (hidden until a call is selected)
 local Detail = Instance.new("TextBox")
 Detail.Size = UDim2.new(1, -270, 1, -28)
 Detail.Position = UDim2.new(0, 270, 0, 28)
@@ -68,9 +69,10 @@ Detail.TextWrapped = true
 Detail.TextXAlignment = Enum.TextXAlignment.Left
 Detail.TextYAlignment = Enum.TextYAlignment.Top
 Detail.TextSize = 14
-Detail.Text = "-- select a call on the left"
+Detail.Text = ""
 Detail.ClearTextOnFocus = false
 Detail.MultiLine = true
+Detail.Visible = false
 Detail.Parent = Frame
 
 local CopyBtn = Instance.new("TextButton")
@@ -81,6 +83,7 @@ CopyBtn.Text = "Copy"
 CopyBtn.Font = Enum.Font.GothamBold
 CopyBtn.TextSize = 12
 CopyBtn.TextColor3 = Color3.new(1,1,1)
+CopyBtn.Visible = false
 CopyBtn.Parent = Frame
 
 local SelectedCode = ""
@@ -97,7 +100,7 @@ Close.MouseButton1Click:Connect(function()
 end)
 
 local function shortName(path)
-    local max = 24
+    local max = 32
     if #path > max then
         return "..."..string.sub(path, #path-max+3, #path)
     end
@@ -118,7 +121,7 @@ local function valToString(v, depth)
         local cf = {v:GetComponents()}
         return "CFrame.new("..table.concat(cf, ",")..")"
     elseif t == "Instance" then
-        return string.format("game.%s", v:GetFullName())
+        return "game."..v:GetFullName()
     elseif t == "table" then
         if depth > 2 then return "{...}" end
         local parts = {}
@@ -127,7 +130,7 @@ local function valToString(v, depth)
         end
         return "{ "..table.concat(parts, ", ").." }"
     else
-        return string.format("(%s)", t)
+        return "("..t..")"
     end
 end
 
@@ -153,19 +156,24 @@ local function hookInstance(obj)
         old = hookfunction(obj[method], function(self, ...)
             local args = {...}
             local lineCode = buildCall(self, method, args)
+
             local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(1, -4, 0, 20)
             btn.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
+            btn.BorderSizePixel = 0
             btn.TextColor3 = Color3.new(1,1,1)
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 12
             btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.AutoButtonColor = true
             btn.Text = method.." | "..shortName(self:GetFullName())
             btn.Parent = ListFrame
 
             btn.MouseButton1Click:Connect(function()
                 SelectedCode = lineCode
                 Detail.Text = lineCode
+                Detail.Visible = true
+                CopyBtn.Visible = true
             end)
 
             ListFrame.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y + 8)
