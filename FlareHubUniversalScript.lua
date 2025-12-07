@@ -198,11 +198,15 @@ MainTab:CreateToggle({
     end,
 })
 
--- 📝 CREDITS TAB
+-- 📝 CREDITS TAB (MADE LARGER + BOLD)
+CreditsTab:CreateSection("👑 CREATOR")
+
 CreditsTab:CreateParagraph({
-    Title = "Created by",
-    Content = "ProfessionalFlare"
+    Title = "👑 ProfessionalFlare",
+    Content = "Script Developer & Designer"
 })
+
+CreditsTab:CreateSection("👤 CONTACT")
 
 CreditsTab:CreateParagraph({
     Title = "Roblox",
