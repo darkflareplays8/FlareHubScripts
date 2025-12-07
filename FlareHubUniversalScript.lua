@@ -25,14 +25,14 @@ local player = Players.LocalPlayer
 
 task.wait(1)
 
--- ULTRA SAFE WALKSPD
+-- ULTRA SAFE WALKSPD (updated for 60 max)
 local function safeSetWalkspeed(humanoid, speed)
-    local targetSpeed = math.clamp(speed, 16, 24)
+    local targetSpeed = math.clamp(speed, 16, 60)
     spawn(function()
         while math.abs(humanoid.WalkSpeed - targetSpeed) > 0.1 do
             local newSpeed = humanoid.WalkSpeed + (targetSpeed - humanoid.WalkSpeed) * 0.03
             newSpeed = newSpeed + math.random(-1, 1) * 0.03
-            humanoid.WalkSpeed = math.clamp(newSpeed, 16, 24)
+            humanoid.WalkSpeed = math.clamp(newSpeed, 16, 60)
             task.wait(0.4)
         end
     end)
@@ -198,4 +198,4 @@ MainTab:CreateToggle({
     end,
 })
 
-print("🔥 FlareHub V2 - Noclip(Anti-Detection) • Godmode • Walkspeed • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Anti-Detection) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
