@@ -37,7 +37,9 @@ end
 
 local function fireCreateParty()
     local createParty = ReplicatedStorage.Shared.Network.RemoteEvent:FindFirstChild("CreateParty")
-    if not createParty then return end
+    if not createParty then
+        return
+    end
 
     createParty:FireServer({
         isPrivate = true,
@@ -57,7 +59,7 @@ local function startCreatePartySpam()
             if MasterRunning and game.PlaceId == LOBBY_PLACE_ID and isPrivateServer() then
                 fireCreateParty()
             end
-            task.wait(0.02) -- spam delay; lower = more aggressive
+            task.wait(0.02) -- spam delay; adjust if needed
         end
     end)
 end
@@ -119,4 +121,117 @@ local function tweenToPad()
     local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
 
-    local info = TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.E
+    local info = TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(hrp, info, {CFrame = CFrame.new(PAD_POSITION + Vector3.new(0, 3, 0))})
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+local function farmBonds(bondsLabel)
+    local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+
+    if hum then
+        for _, tool in ipairs(localPlayer.Backpack:GetChildren()) do
+            local name = tool.Name:lower()
+            if tool:IsA("Tool") and (name:find("gun") or name:find("revolver")) then
+                hum:EquipTool(tool)
+                break
+            end
+        end
+    end
+
+    local found = false
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name:lower():find("bond") then
+            found = true
+            pcall(function()
+                hrp.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
+                task.wait(0.15)
+                local cd = obj:FindFirstChildOfClass("ClickDetector")
+                if cd then
+                    fireclickdetector(cd)
+                    BondsThisRun += 1
+                    bondsLabel.Text = ("Bonds: %d / %d"):format(BondsThisRun, MAX_BONDS_PER_RUN)
+                end
+            end)
+        end
+    end
+
+    return found
+end
+
+local function masterLoop()
+    BondsThisRun = 0
+    local statusLabel, bondsLabel = createOverlay()
+    startCreatePartySpam()
+
+    while MasterRunning do
+        if game.PlaceId == LOBBY_PLACE_ID then
+            if not isPrivateServer() then
+                statusLabel.Text = "Status: Join a private server."
+                MasterRunning = false
+                break
+            end
+
+            statusLabel.Text = "1️⃣ Moving to pad..."
+            tweenToPad()
+
+            statusLabel.Text = "Waiting for teleport..."
+            local start = tick()
+            repeat
+                task.wait(0.5)
+            until not MasterRunning or game.PlaceId == GAME_PLACE_ID or tick() - start > 15
+
+        elseif game.PlaceId == GAME_PLACE_ID then
+            statusLabel.Text = "3️⃣ Farming bonds..."
+            local any = farmBonds(bondsLabel)
+
+            if not any or BondsThisRun >= MAX_BONDS_PER_RUN then
+                statusLabel.Text = "Run finished."
+                MasterRunning = false
+                break
+            end
+
+        else
+            statusLabel.Text = "Go to Dead Rails lobby."
+            task.wait(1)
+        end
+    end
+
+    stopCreatePartySpam()
+
+    if OverlayGui then
+        OverlayGui:Destroy()
+        OverlayGui = nil
+    end
+end
+
+getgenv().StartDeadRailsMaster = function()
+    if MasterRunning then return end
+    MasterRunning = true
+    task.spawn(masterLoop)
+end
+
+getgenv().StopDeadRailsMaster = function()
+    MasterRunning = false
+    stopCreatePartySpam()
+end
+
+MainTab:CreateToggle({
+    Name = "Start DeadRails Master Farm",
+    CurrentValue = false,
+    Flag = "MasterFarmToggle",
+    Callback = function(state)
+        if state then
+            if getgenv().StartDeadRailsMaster then
+                getgenv().StartDeadRailsMaster()
+            end
+        else
+            if getgenv().StopDeadRailsMaster then
+                getgenv().StopDeadRailsMaster()
+            end
+        end
+    end,
+})
