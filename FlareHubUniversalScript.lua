@@ -137,7 +137,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "✨ Noclip",
+    Name = "✨ Noclip (Anti-Detection)",
     CurrentValue = false,
     Flag = "NoclipToggle",
     Callback = function(Value)
@@ -146,7 +146,17 @@ MainTab:CreateToggle({
             getgenv().NoclipConnection = RunService.Stepped:Connect(function()
                 if player.Character then
                     for _, part in pairs(player.Character:GetDescendants()) do
-                        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.Parent then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+            -- EXTRA AGGRESSIVE LOOP (beats most anti-noclip)
+            getgenv().NoclipConnection2 = RunService.Heartbeat:Connect(function()
+                if player.Character then
+                    for _, part in pairs(player.Character:GetDescendants()) do
+                        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.Parent then
                             part.CanCollide = false
                         end
                     end
@@ -157,13 +167,17 @@ MainTab:CreateToggle({
                 getgenv().NoclipConnection:Disconnect() 
                 getgenv().NoclipConnection = nil
             end
+            if getgenv().NoclipConnection2 then 
+                getgenv().NoclipConnection2:Disconnect() 
+                getgenv().NoclipConnection2 = nil
+            end
         end
     end,
 })
 
 MainTab:CreateSlider({
     Name = "Walkspeed (Safe)",
-    Range = {16, 24},
+    Range = {16, 60},
     Increment = 1,
     CurrentValue = 16,
     Flag = "WalkspeedSlider",
@@ -184,4 +198,4 @@ MainTab:CreateToggle({
     end,
 })
 
-print("🔥 FlareHub V2 - Noclip • Godmode • Walkspeed • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Anti-Detection) • Godmode • Walkspeed • Hitbox Desync(OP) LOADED!")
