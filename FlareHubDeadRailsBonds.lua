@@ -1,212 +1,212 @@
--- 🔥 FlareHub V2 - FIXED MASTER TOGGLE (No Errors)
+-- 🔥 FlareHub Dead Rails – PAD → CreateParty → Bond Farm (ONE TOGGLE)
+
 getgenv().SecureMode = true
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-Rayfield:LoadConfiguration()
-
-local Window = Rayfield:CreateWindow({
-   Name = "🔥 FlareHub V2",
-   LoadingTitle = "Dead Rails PERFECT Farm",
-   LoadingSubtitle = "PAD → CREATE → BONDS",
-   ConfigurationSaving = { Enabled = true, FolderName = "FlareHub", FileName = "FixedMaster" },
-   Discord = { Enabled = false },
-   KeySystem = false
-})
-
-local FarmTab = Window:CreateTab("🚂 Dead Rails", 4483362458)
-local player = game:GetService("Players").LocalPlayer
-local Workspace = game:GetService("Workspace")
+local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PlayerGui = player:WaitForChild("PlayerGui")
-local TweenService = game:GetService("TweenService")
+local TweenService      = game:GetService("TweenService")
+local Workspace         = game:GetService("Workspace")
 
-local PAD_POSITION = Vector3.new(64.50, 7.60, 130.75)
-local farming = false
-local bondsCount = 0
-local overlayGui = nil
-local step = "START"
+local localPlayer = Players.LocalPlayer
 
--- **OVERLAY FUNCTION**
+-- === CONFIG ===
+local PAD_POSITION      = Vector3.new(64.50, 7.60, 130.75)  -- your pad coords
+local MAX_BONDS_PER_RUN = 100
+
+local LOBBY_PLACE_ID    = 116495829188952
+local GAME_PLACE_ID     = 70876832253163   -- update if different
+
+-- === STATE ===
+local MasterRunning = false
+local BondsThisRun  = 0
+local OverlayGui
+
+-- === SMALL HELPER ===
+local function isPrivateServer()
+    local psId = game.PrivateServerId
+    local job  = game.JobId
+    return (psId and psId ~= "") or (job and job ~= "")
+end
+
+-- === UI OVERLAY ===
 local function createOverlay()
-   if overlayGui then overlayGui:Destroy() end
-   
-   overlayGui = Instance.new("ScreenGui")
-   overlayGui.Name = "MasterOverlay"
-   overlayGui.Parent = game.CoreGui
-   overlayGui.ResetOnSpawn = false
-   overlayGui.IgnoreGuiInset = true
+    if OverlayGui then OverlayGui:Destroy() end
 
-   local frame = Instance.new("Frame")
-   frame.Size = UDim2.new(1, 0, 1, 0)
-   frame.BackgroundColor3 = Color3.fromRGB(0, 0, 20)
-   frame.BackgroundTransparency = 0.15
-   frame.BorderSizePixel = 0
-   frame.Parent = overlayGui
+    OverlayGui = Instance.new("ScreenGui")
+    OverlayGui.Name = "FlareHubDeadRailsOverlay"
+    OverlayGui.IgnoreGuiInset = true
+    OverlayGui.ResetOnSpawn = false
+    OverlayGui.Parent = game.CoreGui
 
-   local title = Instance.new("TextLabel")
-   title.Size = UDim2.new(1, 0, 0.15, 0)
-   title.Position = UDim2.new(0, 0, 0.05, 0)
-   title.BackgroundTransparency = 1
-   title.Text = "🔥 MASTER FARM ACTIVE"
-   title.TextColor3 = Color3.fromRGB(255, 255, 0)
-   title.TextScaled = true
-   title.Font = Enum.Font.GothamBold
-   title.Parent = frame
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 20)
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 0
+    frame.Parent = frame
 
-   local bondsLabel = Instance.new("TextLabel")
-   bondsLabel.Size = UDim2.new(0.9, 0, 0.12, 0)
-   bondsLabel.Position = UDim2.new(0.05, 0, 0.25, 0)
-   bondsLabel.BackgroundTransparency = 1
-   bondsLabel.Text = "Bonds: 0"
-   bondsLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-   bondsLabel.TextScaled = true
-   bondsLabel.Font = Enum.Font.GothamBold
-   bondsLabel.Parent = frame
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0.15, 0)
+    title.Position = UDim2.new(0, 0, 0.03, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "🔥 PAD → CreateParty → BOND FARM"
+    title.TextColor3 = Color3.fromRGB(255, 255, 0)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBold
+    title.Parent = frame
 
-   local statusLabel = Instance.new("TextLabel")
-   statusLabel.Size = UDim2.new(0.9, 0, 0.12, 0)
-   statusLabel.Position = UDim2.new(0.05, 0, 0.4, 0)
-   statusLabel.BackgroundTransparency = 1
-   statusLabel.Text = "Status: Starting..."
-   statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-   statusLabel.TextScaled = true
-   statusLabel.Font = Enum.Font.Gotham
-   statusLabel.Parent = frame
-   
-   return bondsLabel, statusLabel
+    local status = Instance.new("TextLabel")
+    status.Size = UDim2.new(0.9, 0, 0.12, 0)
+    status.Position = UDim2.new(0.05, 0, 0.22, 0)
+    status.BackgroundTransparency = 1
+    status.Text = "Status: Waiting..."
+    status.TextColor3 = Color3.fromRGB(255, 255, 255)
+    status.TextScaled = true
+    status.Font = Enum.Font.Gotham
+    status.Parent = frame
+
+    local bonds = Instance.new("TextLabel")
+    bonds.Size = UDim2.new(0.9, 0, 0.12, 0)
+    bonds.Position = UDim2.new(0.05, 0, 0.35, 0)
+    bonds.BackgroundTransparency = 1
+    bonds.Text = "Bonds: 0 / "..MAX_BONDS_PER_RUN
+    bonds.TextColor3 = Color3.fromRGB(0, 255, 100)
+    bonds.TextScaled = true
+    bonds.Font = Enum.Font.GothamBold
+    bonds.Parent = frame
+
+    return status, bonds
 end
 
--- **TWEEN TO PAD**
+-- === TWEEN TO PAD (do this before CreateParty) ===
 local function tweenToPad()
-   local character = player.Character
-   if not character then return end
-   local hrp = character:FindFirstChild("HumanoidRootPart")
-   if not hrp then return end
-   
-   local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Quad)
-   local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(PAD_POSITION + Vector3.new(0, 3, 0))})
-   tween:Play()
-   tween.Completed:Wait()
+    local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+    local hrp  = char:WaitForChild("HumanoidRootPart")
+
+    local info  = TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(hrp, info, {CFrame = CFrame.new(PAD_POSITION + Vector3.new(0, 3, 0))})
+    tween:Play()
+    tween.Completed:Wait()
 end
 
--- **CLICK CREATE**
-local function clickCreate()
-   print("🔍 Scanning for CREATE button...")
-   
-   for _, gui in pairs(PlayerGui:GetDescendants()) do
-      if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and gui.Visible then
-         local name = (gui.Name .. gui.Parent.Name .. (gui.Text or "")):lower()
-         if name:find("create") or name:find("party") or name:find("solo") or name:find("1") or name:find("start") then
-            print("✅ CLICKING:", gui:GetFullName())
-            pcall(function()
-               firesignal(gui.MouseButton1Click)
-               gui:Activate()
-            end)
-            break
-         end
-      end
-   end
-   
-   -- REMOTE BACKUP
-   pcall(function()
-      local shared = ReplicatedStorage:FindFirstChild("Shared")
-      if shared then
-         local createParty = shared:FindFirstChild("CreatePartyClient")
-         if createParty then
-            createParty:FireServer({maxPlayers = 1})
-         end
-      end
-   end)
+-- === EXACT CreateParty REMOTE (from TurtleSpy capture) ===
+local function fireCreateParty()
+    local createParty = ReplicatedStorage
+        .Shared
+        .Network
+        .RemoteEvent
+        :FindFirstChild("CreateParty")
+
+    if not createParty then
+        warn("CreateParty remote not found")
+        return
+    end
+
+    createParty:FireServer({
+        isPrivate  = true,
+        trainId    = "default",
+        maxMembers = 4,
+        gameMode   = "Normal",
+    })
 end
 
--- **FARM BONDS**
+-- === BOND FARM IN GAME PLACE ===
 local function farmBonds(bondsLabel, statusLabel)
-   local character = player.Character
-   if not character then return false end
-   local hrp = character:FindFirstChild("HumanoidRootPart")
-   if not hrp then return false end
+    local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+    local hrp  = char:WaitForChild("HumanoidRootPart")
+    local hum  = char:FindFirstChildOfClass("Humanoid")
 
-   local collected = 0
-   for _, obj in pairs(Workspace:GetDescendants()) do
-      if obj.Name:lower():find("bond") and obj:IsA("BasePart") then
-         pcall(function()
-            hrp.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
-            wait(0.2)
-            local clickDetector = obj:FindFirstChildOfClass("ClickDetector")
-            if clickDetector then
-               fireclickdetector(clickDetector)
-               bondsCount = bondsCount + 1
-               collected = collected + 1
+    -- auto‑equip any gun‑like tool
+    if hum then
+        for _, tool in ipairs(localPlayer.Backpack:GetChildren()) do
+            if tool:IsA("Tool") and (tool.Name:lower():find("gun") or tool.Name:lower():find("revolver")) then
+                hum:EquipTool(tool)
+                break
             end
-         end)
-      end
-   end
-   
-   bondsLabel.Text = "Bonds: " .. bondsCount
-   return collected > 0
+        end
+    end
+
+    local collected = 0
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name:lower():find("bond") then
+            pcall(function()
+                hrp.CFrame = obj.CFrame * CFrame.new(0, 5, 0)
+                task.wait(0.15)
+                local cd = obj:FindFirstChildOfClass("ClickDetector")
+                if cd then
+                    fireclickdetector(cd)
+                    BondsThisRun += 1
+                    collected += 1
+                    bondsLabel.Text = ("Bonds: %d / %d"):format(BondsThisRun, MAX_BONDS_PER_RUN)
+                end
+            end)
+        end
+    end
+
+    return collected > 0
 end
 
--- **MASTER FARM LOOP**
-local function startMasterFarm()
-   bondsCount = 0
-   step = "PAD"
-   local bondsLabel, statusLabel = createOverlay()
-   
-   spawn(function()
-      while farming do
-         pcall(function()
-            local char = player.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then 
-               wait(1) 
-               return 
+-- === MASTER LOOP: PAD → CreateParty → FARM ===
+local function masterLoop()
+    BondsThisRun = 0
+    local statusLabel, bondsLabel = createOverlay()
+
+    while MasterRunning do
+        -- lobby logic
+        if game.PlaceId == LOBBY_PLACE_ID then
+            if not isPrivateServer() then
+                statusLabel.Text = "Status: Join a private server."
+                MasterRunning = false
+                break
             end
-            
-            if step == "PAD" then
-               statusLabel.Text = "1️⃣ Moving to PAD..."
-               tweenToPad()
-               step = "CREATE"
-               
-            elseif step == "CREATE" then
-               statusLabel.Text = "2️⃣ Clicking CREATE..."
-               clickCreate()
-               step = "FARM"
-               wait(8) -- Wait countdown + teleport
-               
-            elseif step == "FARM" then
-               statusLabel.Text = "3️⃣ Farming bonds..."
-               local found = farmBonds(bondsLabel, statusLabel)
-               
-               if bondsCount >= 100 or not found then
-                  statusLabel.Text = "✅ COMPLETE - Toggle off/on to restart"
-                  farming = false
-               end
+
+            statusLabel.Text = "1️⃣ Moving to pad..."
+            tweenToPad()
+
+            statusLabel.Text = "2️⃣ Sending CreateParty..."
+            fireCreateParty()
+
+            statusLabel.Text = "Waiting for teleport into game..."
+            -- wait for place change into game
+            local start = tick()
+            repeat
+                task.wait(0.5)
+            until not MasterRunning or game.PlaceId == GAME_PLACE_ID or tick() - start > 15
+
+        -- game logic
+        elseif game.PlaceId == GAME_PLACE_ID then
+            statusLabel.Text = "3️⃣ Farming bonds..."
+            local any = farmBonds(bondsLabel, statusLabel)
+
+            if not any or BondsThisRun >= MAX_BONDS_PER_RUN then
+                statusLabel.Text = "✅ Run finished, you can rejoin/retoggle."
+                MasterRunning = false
+                break
             end
-         end)
-         wait(1)
-      end
-      
-      if overlayGui then overlayGui:Destroy() end
-   end)
+
+            task.wait(0.5)
+
+        else
+            statusLabel.Text = "Status: Go to Dead Rails lobby."
+            task.wait(2)
+        end
+    end
+
+    if OverlayGui then
+        OverlayGui:Destroy()
+        OverlayGui = nil
+    end
 end
 
--- **FIXED TOGGLE - NO ERRORS**
-FarmTab:CreateToggle({
-   Name = "🔥 MASTER FARM (PAD → CREATE → BONDS)",
-   CurrentValue = false,
-   Flag = "MasterFarm",
-   Callback = function(Value)
-      farming = Value
-      if Value then
-         spawn(startMasterFarm)
-      end
-   end,
-})
+-- === SIMPLE TOGGLE BIND (no external UI library) ===
+-- set getgenv().MasterFarm = true/false from your hub UI, or bind to a key
 
-FarmTab:CreateButton({
-   Name = "📍 Test PAD TP",
-   Callback = function()
-      tweenToPad()
-   end
-})
+getgenv().StartDeadRailsMaster = function()
+    if MasterRunning then return end
+    MasterRunning = true
+    task.spawn(masterLoop)
+end
 
-print("🔥 FIXED MASTER TOGGLE - NO ERRORS! [web:226]")
+getgenv().StopDeadRailsMaster = function()
+    MasterRunning = false
+end
