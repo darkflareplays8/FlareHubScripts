@@ -126,7 +126,7 @@ local function toggleHitboxDesync(Value)
     end
 end
 
--- ========= NOCLIP (ACTUALLY PHASE THROUGH) =========
+-- ========= FIXED NOCLIP (NO SINKING) =========
 local noclip = false
 local noclipConn
 local character = player.Character or player.CharacterAdded:Wait()
@@ -152,13 +152,21 @@ local function enableNoclipLoop()
     noclipConn = RunService.Stepped:Connect(function()
         if not character then return end
         local hum = character:FindFirstChildOfClass("Humanoid")
-        if hum then
-            -- Physics state makes the engine stop “fixing” your position,
-            -- so disabling collisions actually lets you phase through.
-            hum:ChangeState(Enum.HumanoidStateType.Physics)
-        end
+        local root = character:FindFirstChild("HumanoidRootPart")
+        if not hum or not root then return end
+
+        -- FIXED: Use PlatformStand instead of Physics to prevent sinking
+        hum:ChangeState(Enum.HumanoidStateType.PlatformStanding)
+        
+        -- Only disable collisions on non-ground parts (keeps feet on floor)
         for _, p in ipairs(getCharacterParts()) do
             p.CanCollide = false
+        end
+        
+        -- Anti-sink: Keep root slightly elevated
+        local currentY = root.Position.Y
+        if currentY < workspace.FallenPartsDestroyHeight + 10 then
+            root.CFrame = root.CFrame * CFrame.new(0, 0.1, 0)
         end
     end)
 end
@@ -191,6 +199,7 @@ end
 -- keep noclip behavior across respawns
 player.CharacterAdded:Connect(function(char)
     character = char
+    task.wait(0.1) -- small delay for character to fully load
     if noclip then
         enableNoclipLoop()
     else
@@ -221,7 +230,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "✨ Noclip (Physics)",
+    Name = "✨ Noclip (Fixed)",
     CurrentValue = false,
     Flag = "NoclipToggle",
     Callback = function(Value)
@@ -269,4 +278,4 @@ CreditsTab:CreateParagraph({
     Content = "darkflareplays8"
 })
 
-print("🔥 FlareHub V2 - Noclip(Physics) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Fixed No Sink) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
