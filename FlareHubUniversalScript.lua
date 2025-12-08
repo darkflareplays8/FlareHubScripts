@@ -270,4 +270,4 @@ CreditsTab:CreateParagraph({
     Content = "darkflareplays8"
 })
 
-print("🔥 FlareHub V2 - Noclip(Walls+Hover FIXED) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Walls+Hover FIXED) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED! Yay!")
