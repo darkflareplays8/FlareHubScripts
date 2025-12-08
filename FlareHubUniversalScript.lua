@@ -126,10 +126,11 @@ local function toggleHitboxDesync(Value)
     end
 end
 
--- ========= FIXED NOCLIP (NO SINKING) =========
+-- ========= HOVER NOCLIP (NEVER SINKS) =========
 local noclip = false
 local noclipConn
 local character = player.Character or player.CharacterAdded:Wait()
+local HOVER_HEIGHT = 2.5 -- studs above ground
 
 local function getCharacterParts()
     local char = character
@@ -155,19 +156,34 @@ local function enableNoclipLoop()
         local root = character:FindFirstChild("HumanoidRootPart")
         if not hum or not root then return end
 
-        -- FIXED: Use PlatformStand instead of Physics to prevent sinking
-        hum:ChangeState(Enum.HumanoidStateType.PlatformStanding)
-        
-        -- Only disable collisions on non-ground parts (keeps feet on floor)
+        -- Disable all collisions
         for _, p in ipairs(getCharacterParts()) do
             p.CanCollide = false
         end
+
+        -- HOVER: Force root part to stay at perfect height above ground
+        local rayOrigin = root.Position
+        local rayDirection = Vector3.new(0, -50, 0) -- cast down
         
-        -- Anti-sink: Keep root slightly elevated
-        local currentY = root.Position.Y
-        if currentY < workspace.FallenPartsDestroyHeight + 10 then
-            root.CFrame = root.CFrame * CFrame.new(0, 0.1, 0)
+        local params = RaycastParams.new()
+        params.FilterDescendantsInstances = {character}
+        params.FilterType = RaycastFilterType.Blacklist
+        
+        local raycastResult = workspace:Raycast(rayOrigin, rayDirection, params)
+        
+        local targetY
+        if raycastResult then
+            -- Ground detected: hover 2.5 studs above it
+            targetY = raycastResult.Position.Y + HOVER_HEIGHT
+        else
+            -- No ground: hover at safe height
+            targetY = workspace.FallenPartsDestroyHeight + 10
         end
+        
+        -- Smoothly move to hover height
+        local currentY = root.Position.Y
+        local newY = currentY + (targetY - currentY) * 0.3
+        root.CFrame = CFrame.new(root.Position.X, newY, root.Position.Z) * CFrame.fromOrientation(0, root.CFrame:ToOrientation())
     end)
 end
 
@@ -199,7 +215,7 @@ end
 -- keep noclip behavior across respawns
 player.CharacterAdded:Connect(function(char)
     character = char
-    task.wait(0.1) -- small delay for character to fully load
+    task.wait(0.1)
     if noclip then
         enableNoclipLoop()
     else
@@ -211,7 +227,7 @@ end)
 MainTab:CreateButton({ 
     Name = "✅ Test GUI", 
     Callback = function() 
-        print("🔥 FlareHub V2 READY! (Hitbox Desync(OP))") 
+        print("🔥 FlareHub V2 READY! (Hover Noclip)") 
         Rayfield:Notify({
             Title = "FlareHub V2",
             Content = "All features loaded successfully!",
@@ -230,7 +246,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "✨ Noclip (Fixed)",
+    Name = "✨ Noclip (Hover)",
     CurrentValue = false,
     Flag = "NoclipToggle",
     Callback = function(Value)
@@ -278,4 +294,4 @@ CreditsTab:CreateParagraph({
     Content = "darkflareplays8"
 })
 
-print("🔥 FlareHub V2 - Noclip(Fixed No Sink) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Hover 2.5) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
