@@ -126,11 +126,11 @@ local function toggleHitboxDesync(Value)
     end
 end
 
--- ========= HOVER NOCLIP (NEVER SINKS) =========
+-- ========= WORKING WALL-PHASING + HOVER =========
 local noclip = false
 local noclipConn
 local character = player.Character or player.CharacterAdded:Wait()
-local HOVER_HEIGHT = 2.5 -- studs above ground
+local HOVER_OFFSET = 2.5
 
 local function getCharacterParts()
     local char = character
@@ -156,34 +156,20 @@ local function enableNoclipLoop()
         local root = character:FindFirstChild("HumanoidRootPart")
         if not hum or not root then return end
 
-        -- Disable all collisions
+        -- WALL PHASING: Core noclip (this is what actually lets you go through walls) [web:2]
         for _, p in ipairs(getCharacterParts()) do
             p.CanCollide = false
         end
 
-        -- HOVER: Force root part to stay at perfect height above ground
-        local rayOrigin = root.Position
-        local rayDirection = Vector3.new(0, -50, 0) -- cast down
+        -- HOVER: Simple Y offset (no raycast interference)
+        local currentCFrame = root.CFrame
+        local hoverCFrame = CFrame.new(
+            currentCFrame.Position.X, 
+            currentCFrame.Position.Y + HOVER_OFFSET, 
+            currentCFrame.Position.Z
+        ) * CFrame.Angles(0, currentCFrame:ToEulerAnglesXYZ())
         
-        local params = RaycastParams.new()
-        params.FilterDescendantsInstances = {character}
-        params.FilterType = RaycastFilterType.Blacklist
-        
-        local raycastResult = workspace:Raycast(rayOrigin, rayDirection, params)
-        
-        local targetY
-        if raycastResult then
-            -- Ground detected: hover 2.5 studs above it
-            targetY = raycastResult.Position.Y + HOVER_HEIGHT
-        else
-            -- No ground: hover at safe height
-            targetY = workspace.FallenPartsDestroyHeight + 10
-        end
-        
-        -- Smoothly move to hover height
-        local currentY = root.Position.Y
-        local newY = currentY + (targetY - currentY) * 0.3
-        root.CFrame = CFrame.new(root.Position.X, newY, root.Position.Z) * CFrame.fromOrientation(0, root.CFrame:ToOrientation())
+        root.CFrame = hoverCFrame
     end)
 end
 
@@ -227,7 +213,7 @@ end)
 MainTab:CreateButton({ 
     Name = "✅ Test GUI", 
     Callback = function() 
-        print("🔥 FlareHub V2 READY! (Hover Noclip)") 
+        print("🔥 FlareHub V2 READY! (Wall Phasing + Hover)") 
         Rayfield:Notify({
             Title = "FlareHub V2",
             Content = "All features loaded successfully!",
@@ -246,7 +232,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "✨ Noclip (Hover)",
+    Name = "✨ Noclip (Walls + Hover)",
     CurrentValue = false,
     Flag = "NoclipToggle",
     Callback = function(Value)
@@ -294,4 +280,4 @@ CreditsTab:CreateParagraph({
     Content = "darkflareplays8"
 })
 
-print("🔥 FlareHub V2 - Noclip(Hover 2.5) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Walls+Hover) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
