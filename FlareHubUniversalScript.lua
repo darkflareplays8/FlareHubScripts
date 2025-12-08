@@ -24,6 +24,7 @@ local CreditsTab = Window:CreateTab("📝 Credits", 4483362458)
 -- SERVICES / PLAYER
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 task.wait(1)
@@ -126,84 +127,45 @@ local function toggleHitboxDesync(Value)
     end
 end
 
--- ========= FIXED NOCLIP (WALLS + HOVER - NO ERRORS) =========
+-- ========= PROVEN NOCLIP (FROM YOUR DRAGGABLE GUI) =========
 local noclip = false
-local noclipConn
 local character = player.Character or player.CharacterAdded:Wait()
-local HOVER_OFFSET = 2.5
 
-local function getCharacterParts()
-    local char = character
-    if not char then return {} end
-    local parts = {}
-    for _, inst in ipairs(char:GetDescendants()) do
-        if inst:IsA("BasePart") and inst.Name ~= "HumanoidRootPart" then
-            table.insert(parts, inst)
+local function toggleNoclip()
+    noclip = not noclip
+end
+
+-- Rayfield toggle calls this
+MainTab:CreateToggle({
+    Name = "✨ Noclip (Proven)",
+    CurrentValue = false,
+    Flag = "NoclipToggle",
+    Callback = function(Value)
+        noclip = Value
+    end,
+})
+
+-- GLOBAL NOCLIP LOOP (exact logic from your draggable script)
+RunService.Stepped:Connect(function()
+    if noclip and character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
         end
     end
-    return parts
-end
-
-local function enableNoclipLoop()
-    if noclipConn then
-        noclipConn:Disconnect()
-        noclipConn = nil
-    end
-
-    noclipConn = RunService.Stepped:Connect(function()
-        if not character then return end
-        local root = character:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-
-        -- WALL PHASING: Disable all part collisions every frame
-        for _, p in ipairs(getCharacterParts()) do
-            p.CanCollide = false
-        end
-
-        -- HOVER: Force hover height (no raycasts)
-        local currentPos = root.Position
-        local hoverY = currentPos.Y + HOVER_OFFSET
-        root.CFrame = CFrame.new(currentPos.X, hoverY, currentPos.Z) * CFrame.Angles(0, root.CFrame:ToEulerAnglesXYZ())
-    end)
-end
-
-local function disableNoclipLoop()
-    if noclipConn then
-        noclipConn:Disconnect()
-        noclipConn = nil
-    end
-    if character then
-        for _, p in ipairs(getCharacterParts()) do
-            p.CanCollide = true
-        end
-    end
-end
-
-local function toggleNoclip(Value)
-    noclip = Value
-    if noclip then
-        enableNoclipLoop()
-    else
-        disableNoclipLoop()
-    end
-end
+end)
 
 -- Respawn handling
-player.CharacterAdded:Connect(function(char)
-    character = char
-    task.wait(0.1)
-    if noclip then
-        enableNoclipLoop()
-    else
-        disableNoclipLoop()
-    end
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
 end)
 
 -- ========= MAIN TAB UI =========
 MainTab:CreateButton({ 
     Name = "✅ Test GUI", 
     Callback = function() 
-        print("🔥 FlareHub V2 READY! (Fixed Noclip)") 
+        print("🔥 FlareHub V2 READY! (Proven Noclip)") 
         Rayfield:Notify({
             Title = "FlareHub V2",
             Content = "All features loaded successfully!",
@@ -218,15 +180,6 @@ MainTab:CreateToggle({
     Flag = "GodmodeToggle",
     Callback = function(Value) 
         toggleGodmode(Value) 
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "✨ Noclip (Walls + Hover)",
-    CurrentValue = false,
-    Flag = "NoclipToggle",
-    Callback = function(Value)
-        toggleNoclip(Value)
     end,
 })
 
@@ -270,4 +223,4 @@ CreditsTab:CreateParagraph({
     Content = "darkflareplays8"
 })
 
-print("🔥 FlareHub V2 - Noclip(Walls+Hover FIXED) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED! Yay!")
+print("🔥 FlareHub V2 - Noclip(Proven) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
