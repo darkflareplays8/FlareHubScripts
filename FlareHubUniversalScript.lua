@@ -21,20 +21,6 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("🎮 Main", 4483362458)
 local CreditsTab = Window:CreateTab("📝 Credits", 4483362458)
 
--- SMALL POPOUT WINDOW (for quick noclip)
-local PopoutWindow = Rayfield:CreateWindow({
-    Name = "🔥 FlareHub V2 - Popout",
-    LoadingTitle = "FlareHub V2",
-    LoadingSubtitle = "Quick Noclip",
-    ConfigurationSaving = { 
-        Enabled = false,
-    },
-    Discord = { Enabled = false },
-    KeySystem = false
-})
-
-local PopoutTab = PopoutWindow:CreateTab("⚡ Quick", 4483362458)
-
 -- SERVICES / PLAYER
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -140,96 +126,77 @@ local function toggleHitboxDesync(Value)
     end
 end
 
--- ========= NOCLIP (WALL ONLY + SHARED) =========
-local noclipEnabled = false
+-- ========= NOCLIP (ACTUALLY PHASE THROUGH) =========
+local noclip = false
 local noclipConn
+local character = player.Character or player.CharacterAdded:Wait()
 
 local function getCharacterParts()
-    local char = player.Character
+    local char = character
     if not char then return {} end
     local parts = {}
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-            table.insert(parts, part)
+    for _, inst in ipairs(char:GetDescendants()) do
+        if inst:IsA("BasePart") and inst.Name ~= "HumanoidRootPart" then
+            table.insert(parts, inst)
         end
     end
     return parts
 end
 
-local function isFloorSurface(normal)
-    -- Upwards normal = floor
-    return normal.Y > 0.7
+local function enableNoclipLoop()
+    if noclipConn then
+        noclipConn:Disconnect()
+        noclipConn = nil
+    end
+
+    noclipConn = RunService.Stepped:Connect(function()
+        if not character then return end
+        local hum = character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            -- Physics state makes the engine stop “fixing” your position,
+            -- so disabling collisions actually lets you phase through.
+            hum:ChangeState(Enum.HumanoidStateType.Physics)
+        end
+        for _, p in ipairs(getCharacterParts()) do
+            p.CanCollide = false
+        end
+    end)
 end
 
-local function toggleNoclip(Value)
-    noclipEnabled = Value
-
-    if noclipEnabled then
-        if noclipConn then
-            noclipConn:Disconnect()
+local function disableNoclipLoop()
+    if noclipConn then
+        noclipConn:Disconnect()
+        noclipConn = nil
+    end
+    if character then
+        for _, p in ipairs(getCharacterParts()) do
+            p.CanCollide = true
         end
-
-        noclipConn = RunService.Stepped:Connect(function()
-            local char = player.Character
-            if not char then return end
-            local root = char:FindFirstChild("HumanoidRootPart")
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if not root or not humanoid then return end
-
-            -- more stable movement while messing with collisions
-            humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
-
-            local dir = root.CFrame.LookVector * 3
-            local rayOrigin = root.Position
-            local rayDirection = dir
-
-            local params = RaycastParams.new()
-            params.FilterDescendantsInstances = {char}
-            params.FilterType = Enum.RaycastFilterType.Blacklist
-
-            local result = workspace:Raycast(rayOrigin, rayDirection, params)
-            local parts = getCharacterParts()
-
-            if result and result.Instance then
-                local normal = result.Normal
-                if not isFloorSurface(normal) then
-                    -- wall: go through
-                    for _, part in ipairs(parts) do
-                        part.CanCollide = false
-                    end
-                else
-                    -- floor: keep collisions so you don't fall
-                    for _, part in ipairs(parts) do
-                        part.CanCollide = true
-                    end
-                end
-            else
-                -- nothing in front: normal collisions
-                for _, part in ipairs(parts) do
-                    part.CanCollide = true
-                end
-            end
-        end)
-    else
-        if noclipConn then
-            noclipConn:Disconnect()
-            noclipConn = nil
-        end
-
-        local char = player.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid:ChangeState(Enum.HumanoidStateType.Running)
-            end
+        local hum = character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Running)
         end
     end
 end
+
+local function toggleNoclip(Value)
+    noclip = Value
+    if noclip then
+        enableNoclipLoop()
+    else
+        disableNoclipLoop()
+    end
+end
+
+-- keep noclip behavior across respawns
+player.CharacterAdded:Connect(function(char)
+    character = char
+    if noclip then
+        enableNoclipLoop()
+    else
+        disableNoclipLoop()
+    end
+end)
 
 -- ========= MAIN TAB UI =========
 MainTab:CreateButton({ 
@@ -253,29 +220,13 @@ MainTab:CreateToggle({
     end,
 })
 
--- MAIN NOCLIP TOGGLE
 MainTab:CreateToggle({
-    Name = "✨ Noclip (Wall only)",
+    Name = "✨ Noclip (Physics)",
     CurrentValue = false,
     Flag = "NoclipToggle",
     Callback = function(Value)
         toggleNoclip(Value)
-        -- sync popout
-        if Rayfield.Flags and Rayfield.Flags.PopoutNoclipToggle then
-            Rayfield.Flags.PopoutNoclipToggle:Set(Value)
-        end
     end,
-})
-
--- POPOUT BUTTON (UNDER MAIN NOCLIP)
-MainTab:CreateButton({
-    Name = "📤 Pop Out Noclip",
-    Callback = function()
-        -- open the popout window
-        if PopoutWindow and PopoutWindow.Open then
-            PopoutWindow:Open()
-        end
-    end
 })
 
 MainTab:CreateSlider({
@@ -301,20 +252,6 @@ MainTab:CreateToggle({
     end,
 })
 
--- ========= POPOUT TAB UI =========
-PopoutTab:CreateToggle({
-    Name = "✨ Noclip",
-    CurrentValue = false,
-    Flag = "PopoutNoclipToggle",
-    Callback = function(Value)
-        toggleNoclip(Value)
-        -- sync main
-        if Rayfield.Flags and Rayfield.Flags.NoclipToggle then
-            Rayfield.Flags.NoclipToggle:Set(Value)
-        end
-    end,
-})
-
 -- ========= CREDITS =========
 CreditsTab:CreateSection("🔥 FLAREHUB V2 🔥")
 CreditsTab:CreateSection("👑 CREATOR 👑")
@@ -332,4 +269,4 @@ CreditsTab:CreateParagraph({
     Content = "darkflareplays8"
 })
 
-print("🔥 FlareHub V2 - Noclip(Wall Only + Popout) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Physics) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
