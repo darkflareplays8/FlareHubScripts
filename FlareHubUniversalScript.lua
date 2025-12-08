@@ -126,7 +126,7 @@ local function toggleHitboxDesync(Value)
     end
 end
 
--- ========= WORKING WALL-PHASING + HOVER =========
+-- ========= FIXED NOCLIP (WALLS + HOVER - NO ERRORS) =========
 local noclip = false
 local noclipConn
 local character = player.Character or player.CharacterAdded:Wait()
@@ -152,24 +152,18 @@ local function enableNoclipLoop()
 
     noclipConn = RunService.Stepped:Connect(function()
         if not character then return end
-        local hum = character:FindFirstChildOfClass("Humanoid")
         local root = character:FindFirstChild("HumanoidRootPart")
-        if not hum or not root then return end
+        if not root then return end
 
-        -- WALL PHASING: Core noclip (this is what actually lets you go through walls) [web:2]
+        -- WALL PHASING: Disable all part collisions every frame
         for _, p in ipairs(getCharacterParts()) do
             p.CanCollide = false
         end
 
-        -- HOVER: Simple Y offset (no raycast interference)
-        local currentCFrame = root.CFrame
-        local hoverCFrame = CFrame.new(
-            currentCFrame.Position.X, 
-            currentCFrame.Position.Y + HOVER_OFFSET, 
-            currentCFrame.Position.Z
-        ) * CFrame.Angles(0, currentCFrame:ToEulerAnglesXYZ())
-        
-        root.CFrame = hoverCFrame
+        -- HOVER: Force hover height (no raycasts)
+        local currentPos = root.Position
+        local hoverY = currentPos.Y + HOVER_OFFSET
+        root.CFrame = CFrame.new(currentPos.X, hoverY, currentPos.Z) * CFrame.Angles(0, root.CFrame:ToEulerAnglesXYZ())
     end)
 end
 
@@ -181,10 +175,6 @@ local function disableNoclipLoop()
     if character then
         for _, p in ipairs(getCharacterParts()) do
             p.CanCollide = true
-        end
-        local hum = character:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum:ChangeState(Enum.HumanoidStateType.Running)
         end
     end
 end
@@ -198,7 +188,7 @@ local function toggleNoclip(Value)
     end
 end
 
--- keep noclip behavior across respawns
+-- Respawn handling
 player.CharacterAdded:Connect(function(char)
     character = char
     task.wait(0.1)
@@ -213,7 +203,7 @@ end)
 MainTab:CreateButton({ 
     Name = "✅ Test GUI", 
     Callback = function() 
-        print("🔥 FlareHub V2 READY! (Wall Phasing + Hover)") 
+        print("🔥 FlareHub V2 READY! (Fixed Noclip)") 
         Rayfield:Notify({
             Title = "FlareHub V2",
             Content = "All features loaded successfully!",
@@ -280,4 +270,4 @@ CreditsTab:CreateParagraph({
     Content = "darkflareplays8"
 })
 
-print("🔥 FlareHub V2 - Noclip(Walls+Hover) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
+print("🔥 FlareHub V2 - Noclip(Walls+Hover FIXED) • Godmode • Walkspeed(60) • Hitbox Desync(OP) LOADED!")
